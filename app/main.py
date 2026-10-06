@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+import json
 from pathlib import Path
+from queue import Queue
+from threading import Thread
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import ValidationError
 
 from app.config import get_llm_config
@@ -49,6 +52,70 @@ def health_llm():
         return {"status": "ok", **result}
     except LLMError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.post("/api/analyze/stream")
+def analyze_stream(request: AnalyzeRequest):
+    def event_stream():
+        queue: Queue = Queue()
+        sentinel = object()
+
+        def emit(event: dict):
+            queue.put(event)
+
+        def worker():
+            try:
+                result = run_analysis(request, emit=emit)
+                emit(
+                    {
+                        "type": "final",
+                        "result": result.model_dump(mode="json"),
+                    }
+                )
+            except PipelineStageError as exc:
+                emit(
+                    {
+                        "type": "error",
+                        "stage": exc.stage,
+                        "message": str(exc),
+                    }
+                )
+            except (LLMError, ValidationError, ValueError) as exc:
+                emit(
+                    {
+                        "type": "error",
+                        "stage": "unknown",
+                        "message": str(exc),
+                    }
+                )
+            except Exception as exc:
+                emit(
+                    {
+                        "type": "error",
+                        "stage": "server",
+                        "message": str(exc),
+                    }
+                )
+            finally:
+                queue.put(sentinel)
+
+        Thread(target=worker, daemon=True).start()
+
+        while True:
+            event = queue.get()
+            if event is sentinel:
+                break
+            yield "data: " + json.dumps(event, ensure_ascii=False, default=str) + "\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
 
 
 @app.post("/api/analyze", response_model=AnalysisResult)
