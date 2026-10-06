@@ -139,3 +139,35 @@ def test_hypothesis_normalizer_rejects_plain_prose_string():
             {"hypotheses": ["Acute decompensated heart failure"]},
             "hypotheses",
         )
+
+
+def test_hypothesis_normalizer_ignores_out_of_contract_sixth_item():
+    from app.pipeline import _normalize_hypothesis_confidence
+
+    valid = [
+        {
+            "rank": i,
+            "name": f"Hypothesis {i}",
+            "rationale": "For review.",
+            "confidence": "medium",
+            "citation_ids": ["P1"],
+        }
+        for i in range(1, 6)
+    ]
+    raw = {
+        "hypotheses": [
+            *valid,
+            "unresolved_questions [",
+        ],
+        "unresolved_questions": ["What changed from baseline?"],
+    }
+
+    normalized = _normalize_hypothesis_confidence(
+        raw,
+        "hypotheses",
+        max_items=5,
+    )
+
+    assert len(normalized["hypotheses"]) == 5
+    assert all(isinstance(item, dict) for item in normalized["hypotheses"])
+    assert normalized["unresolved_questions"] == ["What changed from baseline?"]
