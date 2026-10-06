@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     indiaai_api_key: str | None = None
     database_path: str = "./healthcare_agent.db"
     llm_timeout_seconds: float = Field(default=60.0, gt=0)
+    llm_enable_thinking: bool = True
     retrieval_candidates: int = Field(default=10, ge=1, le=50)
     retrieval_top_k: int = Field(default=6, ge=1, le=20)
     llm_config_path: str = str(BASE_DIR / "config" / "llm.json")
