@@ -54,7 +54,7 @@ def _contract(model_cls) -> str:
     return json.dumps(model_cls.model_json_schema(), ensure_ascii=False)
 
 
-def _derive_lab_flag(value: float | str, reference_range: str | None, supplied_flag: str) -> str:
+def _derive_lab_flag(value: float | str | None, reference_range: str | None, supplied_flag: str) -> str:
     try:
         numeric = float(value)
     except (TypeError, ValueError):
@@ -105,10 +105,16 @@ def _timeline_and_findings(case: ClinicalCase) -> tuple[list[TimelineEvent], lis
 
     for lab in case.labs:
         lab.flag = _derive_lab_flag(lab.value, lab.reference_range, lab.flag)
-        detail = f"{lab.value}{(' ' + lab.unit) if lab.unit else ''}; flag={lab.flag}"
+        if lab.value is not None:
+            value_text = f"{lab.value}{(' ' + lab.unit) if lab.unit else ''}"
+        elif lab.interpretation:
+            value_text = lab.interpretation
+        else:
+            value_text = "not quantified"
+        detail = f"{value_text}; flag={lab.flag}"
         timeline.append(TimelineEvent(event_type="lab", label=lab.test, detail=detail, observed_at=lab.observed_at))
         if lab.flag in {"low", "high", "critical"}:
-            finding = f"{lab.test}: {lab.value}{(' ' + lab.unit) if lab.unit else ''} ({lab.flag})"
+            finding = f"{lab.test}: {value_text} ({lab.flag})"
             abnormal.append(finding)
             active.append(f"abnormal lab - {finding}")
 
@@ -316,6 +322,12 @@ def _normalize_intake_output(raw: dict) -> dict:
     labs = []
     for item in normalized.get("labs") or []:
         lab = dict(item)
+        if lab.get("interpretation") is None:
+            for alias in ("qualitative_value", "result", "result_text", "notes"):
+                candidate = lab.get(alias)
+                if candidate is not None and str(candidate).strip():
+                    lab["interpretation"] = str(candidate).strip()
+                    break
         lab["flag"] = _normalize_enum(
             lab.get("flag"),
             {
@@ -366,7 +378,9 @@ def _intake(request: AnalyzeRequest) -> ClinicalCase:
             "vital/lab flag=low|normal|high|critical|unknown. For example, map elevated/raised to high and decreased/reduced to low. "
             "Keep vital signs separate from laboratory tests. Put systolic blood pressure, diastolic blood pressure, heart rate, "
             "respiratory rate, oxygen saturation/SpO2, and temperature under vitals when explicitly present. "
-            "Do not infer whether a numeric vital is normal or abnormal unless the note explicitly says so."
+            "Do not infer whether a numeric vital is normal or abnormal unless the note explicitly says so. "
+            "For a qualitative lab result with no numeric value (for example 'ketones positive' or 'troponin not elevated'), "
+            "set value to null and preserve the exact qualitative result in interpretation."
         ),
         user_payload=request.note,
         response_contract=json.dumps(
@@ -398,6 +412,7 @@ def _intake(request: AnalyzeRequest) -> ClinicalCase:
                         "unit": "%",
                         "reference_range": None,
                         "flag": "unknown",
+                        "interpretation": None,
                         "observed_at": None,
                     }
                 ],
