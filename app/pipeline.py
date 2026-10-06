@@ -160,61 +160,75 @@ def _record_numbers(case: ClinicalCase, source_note: str) -> set[str]:
     return values
 
 
-def _derived_record_numbers(source_note: str) -> set[str]:
-    """Return narrowly allowed arithmetic facts provable from the source note.
+def _validate_problem_numbers(case: ClinicalCase, source_note: str, text: str) -> str:
+    """Keep source-grounded numbers and remove unsupported calculated values.
 
-    Currently this only derives inter-arm blood-pressure differences when the
-    source explicitly contains at least two BP pairs. This keeps numeric
-    grounding strict while allowing a synthesis to say, for example, that
-    188/104 vs 158/92 represents a 30 mmHg systolic difference.
+    Exact numbers already present in the record are preserved. If the model
+    introduces a new number only as a calculation/comparison (difference,
+    change, ratio, gap, delta, etc.), the number and its adjacent unit are
+    omitted while the qualitative statement is retained. A new number that is
+    presented as a patient fact still fails the stage.
     """
-    pairs = [
-        (float(systolic), float(diastolic))
-        for systolic, diastolic in re.findall(
-            r"(?<!\d)(\d{2,3}(?:\.\d+)?)\s*/\s*(\d{2,3}(?:\.\d+)?)\s*mmhg\b",
-            source_note.lower().replace(",", ""),
-        )
-    ]
-    if len(pairs) < 2:
-        return set()
-
-    derived: set[str] = set()
-    for index, left in enumerate(pairs):
-        for right in pairs[index + 1 :]:
-            for a, b in zip(left, right):
-                difference = abs(a - b)
-                if difference > 0:
-                    derived.add(_canonical_number(str(difference)))
-    return derived
-
-
-def _validate_problem_numbers(case: ClinicalCase, source_note: str, text: str) -> None:
     allowed = _record_numbers(case, source_note)
-    allowed_derived = _derived_record_numbers(source_note)
-    normalized_text = text.replace(",", "")
+    calculation_cues = (
+        "difference",
+        "delta",
+        "change",
+        "increase",
+        "increased by",
+        "decrease",
+        "decreased by",
+        "rise",
+        "drop",
+        "gap",
+        "ratio",
+        "higher than",
+        "lower than",
+        "greater than",
+        "less than",
+        "compared with",
+        "compared to",
+        "versus",
+        " vs ",
+        "between",
+    )
+    unit_pattern = (
+        r"(?:\s*(?:mmhg|bpm|breaths?/min|%|mg/dl|mmol/l|ng/l|pg/ml|u/l|miu/l|"
+        r"ng/dl|g/dl|mg/l|mmol|mg|mcg|ml|l|hours?|hrs?|minutes?|mins?|days?|"
+        r"weeks?|months?|years?|points?))?"
+    )
+    pattern = re.compile(r"(?<![A-Za-z])\d+(?:\.\d+)?" + unit_pattern, re.I)
+    normalized = text.replace(",", "")
 
-    for match in re.finditer(r"(?<![A-Za-z])\d+(?:\.\d+)?", normalized_text):
-        token = match.group(0)
+    unsupported_facts: list[str] = []
+
+    def replace(match: re.Match) -> str:
+        numeric = re.match(r"\d+(?:\.\d+)?", match.group(0).strip())
+        if not numeric:
+            return match.group(0)
+        token = numeric.group(0)
         canonical = _canonical_number(token)
         if canonical in allowed:
-            continue
+            return match.group(0)
 
-        if canonical in allowed_derived:
-            context = normalized_text[max(0, match.start() - 80) : match.end() + 80].lower()
-            if any(
-                phrase in context
-                for phrase in (
-                    "difference",
-                    "inter-arm",
-                    "interarm",
-                    "between arms",
-                    "between the arms",
-                )
-            ):
-                continue
+        context = normalized[max(0, match.start() - 90) : match.end() + 90].lower()
+        if any(cue in context for cue in calculation_cues):
+            return ""
 
-        raise ValueError(f"Problem representation introduced unsupported number: {token}")
+        unsupported_facts.append(token)
+        return match.group(0)
 
+    sanitized = pattern.sub(replace, normalized)
+    sanitized = re.sub(r"\s{2,}", " ", sanitized)
+    sanitized = re.sub(r"\s+([,.;:])", r"\1", sanitized).strip()
+
+    if unsupported_facts:
+        raise ValueError(
+            "Problem representation introduced unsupported patient number(s): "
+            + ", ".join(dict.fromkeys(unsupported_facts))
+        )
+
+    return sanitized
 
 def _normalize_enum(value, mapping: dict[str, str], default):
     if value is None:
@@ -271,6 +285,8 @@ def _normalize_hypothesis_confidence(raw: dict, key: str, *, max_items: int = 5)
             )
 
         hypothesis["confidence"] = _normalize_confidence(hypothesis.get("confidence"))
+        if key == "hypotheses":
+            hypothesis["rank"] = index + 1
         items.append(hypothesis)
 
     normalized[key] = items
@@ -496,8 +512,8 @@ def _synthesize(case: ClinicalCase, source_note: str) -> Synthesis:
         system_prompt=(
             "Write one concise clinical problem representation for clinician decision support. "
             "Use only supplied facts. Do not make a diagnosis, recommend treatment, or invent numbers. "
-            "Prefer repeating documented measurements rather than calculating new values. If a numeric comparison "
-            "is clinically useful, only state a direct arithmetic difference that is provable from supplied measurements."
+            "Prefer repeating documented measurements rather than calculating new values. Describe derived comparisons "
+            "qualitatively (for example, 'inter-arm blood-pressure difference') instead of inventing or calculating a new number."
         ),
         user_payload={
             "case": case.model_dump(mode="json"),
@@ -510,7 +526,7 @@ def _synthesize(case: ClinicalCase, source_note: str) -> Synthesis:
     representation = str(raw.get("problem_representation") or "").strip()
     if not representation:
         raise ValueError("Synthesis model returned an empty problem representation.")
-    _validate_problem_numbers(case, source_note, representation)
+    representation = _validate_problem_numbers(case, source_note, representation)
     return Synthesis(
         problem_representation=representation,
         active_problems=active,
@@ -562,11 +578,13 @@ def _differential(case: ClinicalCase, synthesis: Synthesis, evidence, *, revisio
     for index, hypothesis in enumerate(result.hypotheses, start=1):
         hypothesis.rank = index
     known = {p.passage_id for p in evidence}
-    invalid = [(h.name, cid) for h in result.hypotheses for cid in h.citation_ids if cid not in known]
-    if invalid:
-        raise ValueError(f"Reasoning returned unknown citation IDs: {invalid}")
-    if any(not h.citation_ids for h in result.hypotheses):
-        raise ValueError("Every hypothesis must cite retrieved evidence.")
+    for hypothesis in result.hypotheses:
+        verified = list(dict.fromkeys(cid for cid in hypothesis.citation_ids if cid in known))
+        if not verified:
+            raise ValueError(
+                f"Reasoning hypothesis has no verified evidence citation: {hypothesis.name}"
+            )
+        hypothesis.citation_ids = verified
     return result
 
 
@@ -607,7 +625,16 @@ def _challenge(case: ClinicalCase, synthesis: Synthesis, evidence) -> Challenge:
 def _similar(a: str, b: str) -> bool:
     a_norm = " ".join(re.findall(r"[a-z]+", a.lower()))
     b_norm = " ".join(re.findall(r"[a-z]+", b.lower()))
-    return SequenceMatcher(None, a_norm, b_norm).ratio() >= 0.68
+    if not a_norm or not b_norm:
+        return False
+    if a_norm in b_norm or b_norm in a_norm:
+        return True
+
+    a_tokens = set(a_norm.split())
+    b_tokens = set(b_norm.split())
+    union = a_tokens | b_tokens
+    jaccard = len(a_tokens & b_tokens) / len(union) if union else 0.0
+    return SequenceMatcher(None, a_norm, b_norm).ratio() >= 0.68 or jaccard >= 0.55
 
 
 def _compare(primary: Differential, challenge: Challenge) -> list[str]:
@@ -624,6 +651,71 @@ def _compare(primary: Differential, challenge: Challenge) -> list[str]:
         if not any(_similar(name, other) for other in primary_names):
             disagreements.append(f"High-risk alternative '{name}' is not represented in the primary differential.")
     return list(dict.fromkeys(disagreements))
+
+
+def _normalize_next_step_kind(value) -> str:
+    return _normalize_enum(
+        value,
+        {
+            "question": "question",
+            "history": "question",
+            "history question": "question",
+            "interview": "question",
+            "observation": "observation",
+            "exam": "observation",
+            "examination": "observation",
+            "physical exam": "observation",
+            "physical examination": "observation",
+            "bedside observation": "observation",
+            "test": "test",
+            "diagnostic test": "test",
+            "laboratory test": "test",
+            "lab test": "test",
+            "lab": "test",
+            "imaging": "test",
+            "imaging test": "test",
+            "study": "test",
+        },
+        "test",
+    )
+
+
+def _normalize_next_steps(raw: dict, known_ids: set[str]) -> list[NextStep]:
+    raw_items = raw.get("suggestions") or []
+    if not isinstance(raw_items, list):
+        raise ValueError("Next-step suggestions must be a JSON array.")
+
+    suggestions: list[NextStep] = []
+    for index, item in enumerate(raw_items[:5]):
+        if isinstance(item, str):
+            try:
+                item = json.loads(item)
+            except json.JSONDecodeError as exc:
+                raise ValueError(
+                    f"Next-step suggestion[{index}] must be a JSON object."
+                ) from exc
+        if not isinstance(item, dict):
+            raise ValueError(f"Next-step suggestion[{index}] must be a JSON object.")
+
+        normalized = dict(item)
+        normalized["kind"] = _normalize_next_step_kind(normalized.get("kind"))
+        normalized["citation_ids"] = list(
+            dict.fromkeys(
+                str(cid)
+                for cid in (normalized.get("citation_ids") or [])
+                if str(cid) in known_ids
+            )
+        )
+        if not normalized["citation_ids"]:
+            raise ValueError(
+                f"Next-step suggestion has no verified evidence citation: "
+                f"{normalized.get('action', '<missing action>')}"
+            )
+        suggestions.append(NextStep.model_validate(normalized))
+
+    if not suggestions:
+        raise ValueError("Next-step agent returned no suggestions.")
+    return suggestions
 
 
 def _next_steps(case: ClinicalCase, synthesis: Synthesis, differential: Differential, evidence) -> list[NextStep]:
@@ -655,14 +747,8 @@ def _next_steps(case: ClinicalCase, synthesis: Synthesis, differential: Differen
         ),
         max_output_tokens=4096,
     )
-    suggestions = [NextStep.model_validate(item) for item in raw.get("suggestions", [])]
-    if not suggestions:
-        raise ValueError("Next-step agent returned no suggestions.")
     known = {p.passage_id for p in evidence}
-    invalid = [(step.action, cid) for step in suggestions for cid in step.citation_ids if cid not in known]
-    if invalid:
-        raise ValueError(f"Next-step agent returned unknown citation IDs: {invalid}")
-    return suggestions
+    return _normalize_next_steps(raw, known)
 
 
 def run_analysis(request: AnalyzeRequest, emit=None) -> AnalysisResult:
