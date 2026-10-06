@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Diagnostic Decision Support</title>
 <style>
-:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172033;background:#f5f7fb}*{box-sizing:border-box}body{margin:0}.shell{max-width:1180px;margin:0 auto;padding:32px 20px 56px}.top{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:22px}.top h1{font-size:30px;margin:0 0 8px}.sub{color:#62708a;max-width:760px;line-height:1.55}.badge{background:#eaf0ff;color:#3156b5;border-radius:999px;padding:8px 12px;font-size:13px;font-weight:700;white-space:nowrap}.notice{background:#fff7e6;border:1px solid #f0d59a;border-radius:12px;padding:12px 14px;color:#735516;margin-bottom:20px}.grid{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:20px}.card{background:#fff;border:1px solid #e2e7f0;border-radius:16px;box-shadow:0 8px 28px rgba(20,34,66,.06);padding:18px}.card h2,.card h3{margin:0 0 12px}label{display:block;font-size:13px;font-weight:700;margin:14px 0 6px}textarea,input{width:100%;border:1px solid #cfd7e6;border-radius:10px;padding:11px 12px;font:inherit;background:#fff}textarea{min-height:360px;resize:vertical;line-height:1.45}.check{display:flex;gap:9px;align-items:flex-start;font-size:13px;color:#556176;margin:12px 0}.check input{width:auto;margin-top:2px}.btn{border:0;border-radius:10px;padding:11px 14px;font-weight:800;cursor:pointer}.primary{background:#3156b5;color:#fff;width:100%}.secondary{background:#eef2f8;color:#29364f}.btn:disabled{opacity:.55;cursor:not-allowed}.empty{display:grid;place-items:center;min-height:480px;color:#7a879f;text-align:center;padding:30px}.section{border-top:1px solid #edf0f5;padding-top:16px;margin-top:16px}.section:first-child{border-top:0;padding-top:0;margin-top:0}.muted{color:#738097}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef2f8;font-size:12px;margin:2px 5px 2px 0}.status{font-weight:800;text-transform:uppercase;font-size:12px;letter-spacing:.04em}.pass{color:#1d7a46}.pass_with_warnings{color:#8a6715}.escalate,.block{color:#b13b3b}.hyp{padding:12px;border:1px solid #e3e8f2;border-radius:12px;margin:10px 0}.hyp strong{display:block;margin-bottom:4px}.cite{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;background:#f4f6f9;padding:3px 6px;border-radius:6px}.evidence{font-size:13px;line-height:1.45;padding:10px 0;border-bottom:1px solid #edf0f5}.evidence:last-child{border-bottom:0}.warning{background:#fff2f2;border:1px solid #f1caca;padding:10px;border-radius:10px;color:#8d2828}.row{display:flex;gap:8px;flex-wrap:wrap}.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.45);border-top-color:white;border-radius:50%;animation:spin .8s linear infinite;margin-right:8px;vertical-align:-2px}@keyframes spin{to{transform:rotate(360deg)}}@media(max-width:850px){.grid{grid-template-columns:1fr}.top{display:block}.badge{display:inline-block;margin-top:10px}}
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172033;background:#f5f7fb}*{box-sizing:border-box}body{margin:0}.shell{max-width:1180px;margin:0 auto;padding:32px 20px 56px}.top{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:22px}.top h1{font-size:30px;margin:0 0 8px}.sub{color:#62708a;max-width:760px;line-height:1.55}.badge{background:#eaf0ff;color:#3156b5;border-radius:999px;padding:8px 12px;font-size:13px;font-weight:700;white-space:nowrap}.notice{background:#fff7e6;border:1px solid #f0d59a;border-radius:12px;padding:12px 14px;color:#735516;margin-bottom:20px}.grid{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:20px}.card{background:#fff;border:1px solid #e2e7f0;border-radius:16px;box-shadow:0 8px 28px rgba(20,34,66,.06);padding:18px}.card h2,.card h3{margin:0 0 12px}label{display:block;font-size:13px;font-weight:700;margin:14px 0 6px}textarea,input{width:100%;border:1px solid #cfd7e6;border-radius:10px;padding:11px 12px;font:inherit;background:#fff}textarea{min-height:360px;resize:vertical;line-height:1.45}.check{display:flex;gap:9px;align-items:flex-start;font-size:13px;color:#556176;margin:12px 0}.check input{width:auto;margin-top:2px}.btn{border:0;border-radius:10px;padding:11px 14px;font-weight:800;cursor:pointer}.primary{background:#3156b5;color:#fff;width:100%}.secondary{background:#eef2f8;color:#29364f}.btn:disabled{opacity:.55;cursor:not-allowed}.empty{display:grid;place-items:center;min-height:480px;color:#7a879f;text-align:center;padding:30px}.section{border-top:1px solid #edf0f5;padding-top:16px;margin-top:16px}.section:first-child{border-top:0;padding-top:0;margin-top:0}.muted{color:#738097}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef2f8;font-size:12px;margin:2px 5px 2px 0}.status{font-weight:800;text-transform:uppercase;font-size:12px;letter-spacing:.04em}.pass{color:#1d7a46}.pass_with_warnings{color:#8a6715}.escalate,.block{color:#b13b3b}.hyp{padding:12px;border:1px solid #e3e8f2;border-radius:12px;margin:10px 0}.hyp strong{display:block;margin-bottom:4px}.cite{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;background:#f4f6f9;padding:3px 6px;border-radius:6px}.evidence{font-size:13px;line-height:1.45;padding:10px 0;border-bottom:1px solid #edf0f5}.evidence:last-child{border-bottom:0}.warning{background:#fff2f2;border:1px solid #f1caca;padding:10px;border-radius:10px;color:#8d2828}.progress-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #edf0f5}.progress-row:last-child{border-bottom:0}.progress-dot{width:10px;height:10px;border-radius:50%;background:#aeb8c9;margin-top:5px;flex:0 0 auto}.progress-row.active .progress-dot{background:#3156b5;box-shadow:0 0 0 4px #eaf0ff}.progress-row.done .progress-dot{background:#1d7a46}.progress-title{font-weight:700}.progress-detail{font-size:13px;color:#738097;margin-top:2px}.row{display:flex;gap:8px;flex-wrap:wrap}.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.45);border-top-color:white;border-radius:50%;animation:spin .8s linear infinite;margin-right:8px;vertical-align:-2px}@keyframes spin{to{transform:rotate(360deg)}}@media(max-width:850px){.grid{grid-template-columns:1fr}.top{display:block}.badge{display:inline-block;margin-top:10px}}
 </style>
 </head>
 <body>
@@ -29,6 +29,56 @@
 <script>
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const list=a=>(a&&a.length)?'<ul>'+a.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'<div class="muted">None documented</div>';
+let progressRows=new Map();
+
+function beginProgress(){
+  progressRows=new Map();
+  document.getElementById('output').innerHTML=`
+    <div class="section">
+      <h2>Analysis progress</h2>
+      <div class="muted" style="margin-bottom:8px">Live events from the clinical pipeline and Qwen stream.</div>
+      <div id="progressList"></div>
+    </div>`;
+}
+
+function progressRow(stage){
+  if(progressRows.has(stage)) return progressRows.get(stage);
+  const id='stage-'+progressRows.size;
+  progressRows.set(stage,id);
+  const listEl=document.getElementById('progressList');
+  listEl.insertAdjacentHTML('beforeend',`
+    <div class="progress-row" id="${id}">
+      <span class="progress-dot"></span>
+      <div><div class="progress-title">${esc(stage)}</div><div class="progress-detail">Queued</div></div>
+    </div>`);
+  return id;
+}
+
+function updateProgress(event){
+  const stage=event.stage||'Pipeline';
+  const row=document.getElementById(progressRow(stage));
+  const detail=row.querySelector('.progress-detail');
+
+  if(event.type==='stage_start'){
+    row.className='progress-row active';
+    detail.textContent='Started';
+  }else if(event.type==='llm_request'){
+    row.className='progress-row active';
+    detail.textContent='Request sent to Qwen';
+  }else if(event.type==='llm_connected'){
+    row.className='progress-row active';
+    detail.textContent=`IndiaAI connected (HTTP ${event.status_code}); waiting for streamed tokens`;
+  }else if(event.type==='llm_delta'){
+    row.className='progress-row active';
+    detail.textContent=`Qwen is streaming · ${event.received_chars.toLocaleString()} chars received`;
+  }else if(event.type==='llm_complete'){
+    row.className='progress-row active';
+    detail.textContent=`Qwen response complete · ${event.received_chars.toLocaleString()} chars received`;
+  }else if(event.type==='stage_complete'){
+    row.className='progress-row done';
+    detail.textContent='Complete';
+  }
+}
 function hyp(h){return `<div class="hyp"><strong>${h.rank}. ${esc(h.name)} <span class="muted">· ${esc(h.confidence)}</span></strong><div>${esc(h.rationale)}</div><div class="row" style="margin-top:7px">${(h.citation_ids||[]).map(x=>`<span class="cite">${esc(x)}</span>`).join('')}</div></div>`}
 function render(d){
  const safety=d.safety||{}; const challenge=d.challenge||{};
@@ -45,40 +95,80 @@ function render(d){
 async function analyze(){
   const btn=document.getElementById('analyze'),err=document.getElementById('error');
   err.style.display='none';
+
   if(!document.getElementById('synthetic').checked){
     err.textContent='Please confirm the synthetic/de-identified data boundary.';
     err.style.display='block';
     return;
   }
+
+  beginProgress();
   btn.disabled=true;
   btn.innerHTML='<span class="spinner"></span>Running clinical pipeline';
+
   try{
-    const controller=new AbortController();
-    const timer=setTimeout(()=>controller.abort(),180000);
-    const r=await fetch('/api/analyze',{
+    const r=await fetch('/api/analyze/stream',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
-      signal:controller.signal,
+      headers:{
+        'Content-Type':'application/json',
+        'Accept':'text/event-stream'
+      },
       body:JSON.stringify({
         note:document.getElementById('note').value,
         patient_reference:document.getElementById('reference').value||null,
         confirm_synthetic:true
       })
     });
-    clearTimeout(timer);
-    const d=await r.json();
+
     if(!r.ok){
-      const detail=d.detail;
-      if(detail && typeof detail==='object'){
-        throw new Error((detail.stage?detail.stage+': ':'')+(detail.message||JSON.stringify(detail)));
-      }
-      throw new Error(detail||'Analysis failed');
+      const body=await r.text();
+      throw new Error(body||`Streaming request failed with HTTP ${r.status}`);
     }
-    render(d);
+    if(!r.body){
+      throw new Error('Browser did not expose the streaming response body.');
+    }
+
+    const reader=r.body.getReader();
+    const decoder=new TextDecoder();
+    let buffer='';
+    let finalReceived=false;
+
+    while(true){
+      const {value,done}=await reader.read();
+      if(done) break;
+
+      buffer+=decoder.decode(value,{stream:true});
+      const blocks=buffer.split('\n\n');
+      buffer=blocks.pop()||'';
+
+      for(const block of blocks){
+        const dataLines=block
+          .split('\n')
+          .filter(line=>line.startsWith('data:'))
+          .map(line=>line.slice(5).trim());
+
+        if(!dataLines.length) continue;
+
+        const event=JSON.parse(dataLines.join('\n'));
+
+        if(event.type==='error'){
+          throw new Error((event.stage?event.stage+': ':'')+(event.message||'Pipeline failed'));
+        }
+        if(event.type==='final'){
+          finalReceived=true;
+          render(event.result);
+          continue;
+        }
+
+        updateProgress(event);
+      }
+    }
+
+    if(!finalReceived){
+      throw new Error('Pipeline stream ended before a final result was produced.');
+    }
   }catch(e){
-    err.textContent=e.name==='AbortError'
-      ? 'Analysis timed out in the browser. Check /health/llm and the server console.'
-      : e.message;
+    err.textContent=e.message||String(e);
     err.style.display='block';
   }finally{
     btn.disabled=false;
