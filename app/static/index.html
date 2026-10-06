@@ -42,7 +42,49 @@ function render(d){
  <div class="section"><h3>Safety gate <span class="status ${esc(safety.status)}">${esc(safety.status)}</span></h3>${safety.urgent_warning?`<div class="warning">${esc(safety.urgent_warning)}</div>`:''}${list(safety.blocked_reasons)}${list(safety.warnings)}</div>
  <div class="section"><h3>Human review</h3><div class="row"><button class="btn secondary" onclick="review('${esc(d.run_id)}','accepted')">Accept for review record</button><button class="btn secondary" onclick="review('${esc(d.run_id)}','rejected')">Reject</button></div><div id="reviewMsg" class="muted" style="margin-top:8px"></div></div>`;
 }
-async function analyze(){const btn=document.getElementById('analyze'),err=document.getElementById('error');err.style.display='none';if(!document.getElementById('synthetic').checked){err.textContent='Please confirm the synthetic/de-identified data boundary.';err.style.display='block';return}btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Running pipeline';try{const r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({note:document.getElementById('note').value,patient_reference:document.getElementById('reference').value||null,confirm_synthetic:true})});const d=await r.json();if(!r.ok)throw new Error(d.detail||'Analysis failed');render(d)}catch(e){err.textContent=e.message;err.style.display='block'}finally{btn.disabled=false;btn.textContent='Run decision support'}}
+async function analyze(){
+  const btn=document.getElementById('analyze'),err=document.getElementById('error');
+  err.style.display='none';
+  if(!document.getElementById('synthetic').checked){
+    err.textContent='Please confirm the synthetic/de-identified data boundary.';
+    err.style.display='block';
+    return;
+  }
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span>Running clinical pipeline';
+  try{
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),180000);
+    const r=await fetch('/api/analyze',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      signal:controller.signal,
+      body:JSON.stringify({
+        note:document.getElementById('note').value,
+        patient_reference:document.getElementById('reference').value||null,
+        confirm_synthetic:true
+      })
+    });
+    clearTimeout(timer);
+    const d=await r.json();
+    if(!r.ok){
+      const detail=d.detail;
+      if(detail && typeof detail==='object'){
+        throw new Error((detail.stage?detail.stage+': ':'')+(detail.message||JSON.stringify(detail)));
+      }
+      throw new Error(detail||'Analysis failed');
+    }
+    render(d);
+  }catch(e){
+    err.textContent=e.name==='AbortError'
+      ? 'Analysis timed out in the browser. Check /health/llm and the server console.'
+      : e.message;
+    err.style.display='block';
+  }finally{
+    btn.disabled=false;
+    btn.textContent='Run decision support';
+  }
+}
 async function review(runId,decision){const r=await fetch(`/api/runs/${encodeURIComponent(runId)}/review`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({decision})});document.getElementById('reviewMsg').textContent=r.ok?`Review recorded: ${decision}`:'Unable to record review';}
 </script>
 </body>
