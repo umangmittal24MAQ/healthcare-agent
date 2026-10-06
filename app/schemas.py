@@ -28,10 +28,11 @@ class Medication(BaseModel):
 
 class LabResult(BaseModel):
     test: str
-    value: float | str
+    value: float | str | None = None
     unit: str | None = None
     reference_range: str | None = None
     flag: Literal["low", "normal", "high", "critical", "unknown"] = "unknown"
+    interpretation: str | None = None
     observed_at: datetime | None = None
 
 
