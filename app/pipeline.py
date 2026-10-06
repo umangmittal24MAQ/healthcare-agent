@@ -182,11 +182,16 @@ def _normalize_confidence(value):
     }.get(normalized, normalized)
 
 
-def _normalize_hypothesis_confidence(raw: dict, key: str) -> dict:
+def _normalize_hypothesis_confidence(raw: dict, key: str, *, max_items: int = 5) -> dict:
     normalized = dict(raw)
     raw_items = normalized.get(key) or []
     if not isinstance(raw_items, list):
         raise ValueError(f"{key} must be a JSON array of objects.")
+
+    # The model contract explicitly caps hypothesis lists. Enforce that boundary
+    # before validating individual items so any extra out-of-contract tail item
+    # cannot invalidate an otherwise valid clinician-facing result.
+    raw_items = raw_items[:max_items]
 
     items = []
     for index, item in enumerate(raw_items):
@@ -487,7 +492,7 @@ def _differential(case: ClinicalCase, synthesis: Synthesis, evidence, *, revisio
         ),
         max_output_tokens=8192 if revision_context else 4096,
     )
-    raw = _normalize_hypothesis_confidence(raw, "hypotheses")
+    raw = _normalize_hypothesis_confidence(raw, "hypotheses", max_items=5)
     result = Differential.model_validate(raw)
     for index, hypothesis in enumerate(result.hypotheses, start=1):
         hypothesis.rank = index
@@ -530,7 +535,7 @@ def _challenge(case: ClinicalCase, synthesis: Synthesis, evidence) -> Challenge:
         ),
         max_output_tokens=3072,
     )
-    raw = _normalize_hypothesis_confidence(raw, "independent_hypotheses")
+    raw = _normalize_hypothesis_confidence(raw, "independent_hypotheses", max_items=5)
     return Challenge.model_validate({**raw, "disagreements": []})
 
 
