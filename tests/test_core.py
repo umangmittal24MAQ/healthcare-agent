@@ -31,3 +31,32 @@ def test_safety_blocks_unknown_citation(monkeypatch):
     result = evaluate_safety(case,differential,evidence,[])
     assert result.status == "block"
     assert any("citation" in reason.lower() for reason in result.blocked_reasons)
+
+
+def test_problem_representation_accepts_numbers_from_original_note():
+    from app.pipeline import _validate_problem_numbers
+
+    note = (
+        "A 68-year-old man with coronary artery disease, HFrEF (EF 30%), and hypertension "
+        "presents with progressive dyspnea over 3 days, orthopnea requiring 3 pillows, and edema. "
+        "Blood pressure 162/98 mmHg, heart rate 102 bpm, respiratory rate 24 breaths/min, "
+        "oxygen saturation 87% on room air. WBC 7.1 and BNP 1,450 pg/mL."
+    )
+    case = ClinicalCase(
+        case_id="CASE-HF",
+        patient_reference="synthetic",
+        age=68,
+        sex="male",
+        chief_complaint="progressive dyspnea",
+        labs=[
+            LabResult(test="WBC", value=7.1),
+            LabResult(test="BNP", value=1450, unit="pg/mL"),
+        ],
+    )
+
+    _validate_problem_numbers(
+        case,
+        note,
+        "68-year-old man with HFrEF (EF 30%), 3 days of dyspnea, BP 162/98, "
+        "heart rate 102, respiratory rate 24, oxygen saturation 87%, WBC 7.1 and BNP 1450.",
+    )
