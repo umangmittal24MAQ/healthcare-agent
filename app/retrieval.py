@@ -86,7 +86,7 @@ def retrieve_evidence(case: ClinicalCase, synthesis: Synthesis) -> list[Evidence
             "top_k": settings.retrieval_top_k,
         },
         response_contract='{"ordered_ids": ["passage-id", "..."]}',
-        max_output_tokens=800,
+        max_output_tokens=2048,
     )
     ordered_ids = raw.get("ordered_ids")
     if not isinstance(ordered_ids, list) or not ordered_ids:
