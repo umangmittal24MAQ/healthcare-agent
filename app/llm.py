@@ -59,23 +59,29 @@ def _extract_json(text: str) -> dict[str, Any]:
     return value
 
 
-def _stream_delta(event: dict[str, Any]) -> tuple[str, int]:
+def _stream_delta(event: dict[str, Any]) -> tuple[str, str, str | None]:
     try:
         choice = event["choices"][0]
     except (KeyError, IndexError, TypeError):
-        return "", 0
+        return "", "", None
+
+    if not isinstance(choice, dict):
+        return "", "", None
 
     delta = choice.get("delta") or {}
     if not isinstance(delta, dict):
-        return "", 0
+        delta = {}
 
     content = delta.get("content")
     content_text = content if isinstance(content, str) else ""
 
     reasoning = delta.get("reasoning_content")
-    reasoning_chars = len(reasoning) if isinstance(reasoning, str) else 0
+    reasoning_text = reasoning if isinstance(reasoning, str) else ""
 
-    return content_text, reasoning_chars
+    finish_reason = choice.get("finish_reason")
+    finish_text = finish_reason if isinstance(finish_reason, str) else None
+
+    return content_text, reasoning_text, finish_text
 
 
 def llm_json(
@@ -161,9 +167,11 @@ def llm_json(
                     )
 
                 content_parts: list[str] = []
-                received_chars = 0
+                content_chars = 0
+                reasoning_chars = 0
                 received_events = 0
                 done_seen = False
+                finish_reason: str | None = None
 
                 for line in response.iter_lines():
                     if not line:
@@ -186,36 +194,56 @@ def llm_json(
                         raise LLMError(f"IndiaAI emitted invalid SSE JSON: {data[:300]}") from exc
 
                     received_events += 1
-                    content_delta, reasoning_chars = _stream_delta(event)
-                    activity_chars = len(content_delta) + reasoning_chars
+                    content_delta, reasoning_delta, chunk_finish_reason = _stream_delta(event)
+
+                    if chunk_finish_reason:
+                        finish_reason = chunk_finish_reason
 
                     if content_delta:
                         content_parts.append(content_delta)
+                        content_chars += len(content_delta)
 
-                    if activity_chars:
-                        received_chars += activity_chars
+                    if reasoning_delta:
+                        reasoning_chars += len(reasoning_delta)
+
+                    received_chars = content_chars + reasoning_chars
+                    if content_delta or reasoning_delta:
                         _emit(
                             {
                                 "type": "llm_delta",
                                 "received_chars": received_chars,
+                                "content_chars": content_chars,
+                                "reasoning_chars": reasoning_chars,
                                 "stream_events": received_events,
+                                "finish_reason": finish_reason,
                             }
                         )
 
                 content = "".join(content_parts).strip()
+                received_chars = content_chars + reasoning_chars
                 _emit(
                     {
                         "type": "llm_complete",
                         "received_chars": received_chars,
+                        "content_chars": content_chars,
+                        "reasoning_chars": reasoning_chars,
                         "stream_events": received_events,
                         "done_seen": done_seen,
+                        "finish_reason": finish_reason,
                     }
                 )
 
                 if not content:
+                    if finish_reason == "length":
+                        raise LLMError(
+                            "IndiaAI exhausted the output-token budget while reasoning before producing "
+                            f"final assistant content (reasoning_chars={reasoning_chars}, "
+                            f"events={received_events}). Increase max_output_tokens for this stage."
+                        )
                     raise LLMError(
-                        "IndiaAI stream completed without assistant content. "
-                        f"Received {received_events} SSE event(s)."
+                        "IndiaAI stream completed without final assistant content "
+                        f"(reasoning_chars={reasoning_chars}, finish_reason={finish_reason or 'unknown'}, "
+                        f"events={received_events})."
                     )
 
                 return _extract_json(content)
