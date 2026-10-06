@@ -77,7 +77,7 @@ def analyze_stream(request: AnalyzeRequest):
                     {
                         "type": "error",
                         "stage": exc.stage,
-                        "message": str(exc),
+                        "message": exc.message,
                     }
                 )
             except (LLMError, ValidationError, ValueError) as exc:
@@ -125,7 +125,7 @@ def analyze(request: AnalyzeRequest):
     except PipelineStageError as exc:
         raise HTTPException(
             status_code=502,
-            detail={"stage": exc.stage, "message": str(exc)},
+            detail={"stage": exc.stage, "message": exc.message},
         ) from exc
     except (LLMError, ValidationError, ValueError) as exc:
         raise HTTPException(status_code=502, detail={"stage": "unknown", "message": str(exc)}) from exc
