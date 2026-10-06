@@ -475,3 +475,89 @@ def test_retrieval_still_fails_when_all_reranker_ids_are_invalid(monkeypatch):
 
     with pytest.raises(ValueError, match="no valid candidate IDs"):
         retrieval.retrieve_evidence(case, synthesis)
+
+
+
+def test_next_step_normalizer_keeps_only_verified_citations():
+    from app.pipeline import _normalize_next_steps
+
+    steps = _normalize_next_steps(
+        {
+            "suggestions": [
+                {
+                    "action": "Obtain ECG",
+                    "kind": "diagnostic test",
+                    "distinguishes_between": ["ACS", "Pericarditis"],
+                    "rationale": "Clarifies ischemic versus non-ischemic patterns.",
+                    "citation_ids": ["P1", "NOT-REAL", "P1"],
+                }
+            ]
+        },
+        {"P1"},
+    )
+
+    assert len(steps) == 1
+    assert steps[0].kind == "test"
+    assert steps[0].citation_ids == ["P1"]
+
+
+def test_next_step_normalizer_fails_when_no_verified_citation_remains():
+    import pytest
+    from app.pipeline import _normalize_next_steps
+
+    with pytest.raises(ValueError, match="no verified evidence citation"):
+        _normalize_next_steps(
+            {
+                "suggestions": [
+                    {
+                        "action": "Obtain imaging",
+                        "kind": "imaging",
+                        "distinguishes_between": ["A", "B"],
+                        "rationale": "For review.",
+                        "citation_ids": ["BAD-ID"],
+                    }
+                ]
+            },
+            {"P1"},
+        )
+
+
+def test_reasoning_drops_extra_bad_citation_but_requires_one_verified(monkeypatch):
+    evidence = _evidence()
+    case = ClinicalCase(
+        case_id="CASE-CITE",
+        patient_reference="synthetic",
+        age=40,
+        sex="unknown",
+        chief_complaint="dyspnea",
+    )
+    synthesis = Synthesis(
+        problem_representation="40-year-old patient with dyspnea.",
+        active_problems=["dyspnea"],
+        abnormal_findings=[],
+        timeline=[],
+        missing_information=[],
+    )
+
+    def fake_llm_json(**kwargs):
+        return {
+            "hypotheses": [
+                {
+                    "name": "Cardiopulmonary process",
+                    "rationale": "Requires clinician review.",
+                    "supporting_evidence": [],
+                    "opposing_evidence": [],
+                    "missing_information": [],
+                    "confidence": "medium",
+                    "citation_ids": ["P1", "HALLUCINATED", "P1"],
+                }
+            ],
+            "unresolved_questions": [],
+        }
+
+    monkeypatch.setattr(pipeline, "llm_json", fake_llm_json)
+
+    result = pipeline._differential(case, synthesis, evidence)
+
+    assert result.hypotheses[0].rank == 1
+    assert result.hypotheses[0].citation_ids == ["P1"]
