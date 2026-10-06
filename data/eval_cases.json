@@ -1,0 +1,371 @@
+[
+  {
+    "id": "hf_decompensation",
+    "category": "cardiopulmonary",
+    "note": "A 68-year-old man with coronary artery disease, HFrEF (EF 30%), and hypertension presents with progressive dyspnea over 3 days, orthopnea requiring 3 pillows, and bilateral lower-extremity swelling. He has a mild non-productive cough. Blood pressure is 162/98 mmHg, heart rate 102 bpm, respiratory rate 24 breaths/min, and oxygen saturation 87% on room air. WBC is 7.1 and BNP is 1450 pg/mL. Chest X-ray shows bilateral diffuse interstitial infiltrates, Kerley B lines, cardiomegaly, and small bilateral pleural effusions.",
+    "must_consider": {
+      "label": "Acute decompensated heart failure",
+      "aliases": [
+        "acute decompensated heart failure",
+        "heart failure exacerbation",
+        "hfrEF exacerbation",
+        "cardiogenic pulmonary edema"
+      ]
+    },
+    "trap": "Mild cough and bilateral infiltrates can pull reasoning toward pneumonia.",
+    "expected_red_flag": true,
+    "expected_evidence_sources": [
+      "SYN-GUIDE-HF-001",
+      "SYN-GUIDE-DYSPNEA-001"
+    ]
+  },
+  {
+    "id": "pneumonia_sepsis",
+    "category": "infectious-respiratory",
+    "note": "A 72-year-old woman presents with 2 days of fever, productive cough with yellow sputum, pleuritic right-sided chest pain, and worsening shortness of breath. Temperature is 39.2 C, blood pressure 92/58 mmHg, heart rate 118 bpm, respiratory rate 32 breaths/min, and oxygen saturation 89% on room air. WBC is 18.6, lactate 4.5 mmol/L, and creatinine is 1.8 mg/dL from a prior 0.9. Chest X-ray shows a new right lower-lobe air-space consolidation.",
+    "must_consider": {
+      "label": "Community-acquired pneumonia",
+      "aliases": [
+        "community acquired pneumonia",
+        "pneumonia",
+        "lower respiratory infection"
+      ]
+    },
+    "trap": "Pleuritic pain and tachycardia could distract toward pulmonary embolism.",
+    "expected_red_flag": true,
+    "expected_evidence_sources": [
+      "SYN-GUIDE-RESP-001",
+      "SYN-GUIDE-SEPSIS-001"
+    ]
+  },
+  {
+    "id": "acute_coronary_syndrome",
+    "category": "cardiovascular",
+    "note": "A 59-year-old man with diabetes, hypertension, and tobacco use presents with 45 minutes of central pressure-like chest pain radiating to the left arm with diaphoresis and nausea. Blood pressure is 148/88 mmHg, heart rate 96 bpm, respiratory rate 20 breaths/min, and oxygen saturation 96% on room air. ECG shows 1 mm horizontal ST depressions in leads V4-V6. Initial high-sensitivity troponin is elevated at 186 ng/L.",
+    "must_consider": {
+      "label": "Acute coronary syndrome",
+      "aliases": [
+        "acute coronary syndrome",
+        "non st elevation myocardial infarction",
+        "nstemi",
+        "myocardial infarction",
+        "acute myocardial ischemia"
+      ]
+    },
+    "trap": "Nausea can distract toward a gastrointestinal explanation.",
+    "expected_red_flag": false,
+    "expected_evidence_sources": [
+      "SYN-GUIDE-ACS-001",
+      "SYN-GUIDE-CHEST-001"
+    ]
+  },
+  {
+    "id": "pulmonary_embolism",
+    "category": "cardiopulmonary",
+    "note": "A 46-year-old woman presents with sudden-onset dyspnea and sharp pleuritic chest pain one week after a long-haul flight. She has new left calf swelling and tenderness. Blood pressure is 118/74 mmHg, heart rate 118 bpm, respiratory rate 28 breaths/min, and oxygen saturation 88% on room air. Chest X-ray has no focal consolidation. ECG shows sinus tachycardia.",
+    "must_consider": {
+      "label": "Pulmonary embolism",
+      "aliases": [
+        "pulmonary embolism",
+        "pulmonary thromboembolism",
+        "venous thromboembolism"
+      ]
+    },
+    "trap": "Pleuritic pain could be attributed to pneumonia despite no focal infiltrate.",
+    "expected_red_flag": true,
+    "expected_evidence_sources": [
+      "SYN-GUIDE-PE-001",
+      "SYN-GUIDE-DYSPNEA-001"
+    ]
+  },
+  {
+    "id": "copd_exacerbation",
+    "category": "respiratory",
+    "note": "A 70-year-old man with COPD and a 50-pack-year smoking history presents with 4 days of increased dyspnea, wheeze, and increased sputum volume with purulence. Blood pressure is 136/82 mmHg, heart rate 108 bpm, respiratory rate 26 breaths/min, and oxygen saturation 86% on room air. Venous blood gas shows pCO2 58 mmHg. Chest X-ray shows hyperinflation without focal consolidation.",
+    "must_consider": {
+      "label": "Acute exacerbation of COPD",
+      "aliases": [
+        "copd exacerbation",
+        "acute exacerbation of chronic obstructive pulmonary disease",
+        "aecopd"
+      ]
+    },
+    "trap": "Purulent sputum can cause overcalling primary pneumonia despite no focal consolidation.",
+    "expected_red_flag": true,
+    "expected_evidence_sources": [
+      "SYN-GUIDE-OBSTRUCTIVE-001",
+      "SYN-GUIDE-RESP-001"
+    ]
+  },
+  {
+    "id": "asthma_exacerbation",
+    "category": "respiratory",
+    "note": "A 29-year-old woman with asthma presents with progressive chest tightness, wheeze, and shortness of breath after cat exposure. Blood pressure is 124/76 mmHg, heart rate 112 bpm, respiratory rate 32 breaths/min, and oxygen saturation 91% on room air. She speaks in short phrases. Peak expiratory flow is 42% of her personal best. Chest X-ray shows no focal infiltrate.",
+    "must_consider": {
+      "label": "Acute asthma exacerbation",
+      "aliases": [
+        "acute asthma exacerbation",
+        "asthma exacerbation",
+        "acute severe asthma"
+      ]
+    },
+    "trap": "Tachycardia and dyspnea could prompt unnecessary thromboembolic focus without risk factors.",
+    "expected_red_flag": true,
+    "expected_evidence_sources": [
+      "SYN-GUIDE-OBSTRUCTIVE-001"
+    ]
+  },
+  {
+    "id": "diabetic_ketoacidosis",
+    "category": "metabolic",
+    "note": "A 24-year-old man with type 1 diabetes presents with 1 day of vomiting, abdominal discomfort, polyuria, polydipsia, and increasing lethargy after missing insulin. Blood pressure is 104/66 mmHg, heart rate 116 bpm, respiratory rate 30 breaths/min with deep respirations, and oxygen saturation 98% on room air. Glucose is 482 mg/dL, bicarbonate 10 mmol/L, venous pH 7.18, anion gap 25, and serum ketones are positive.",
+    "must_consider": {
+      "label": "Diabetic ketoacidosis",
+      "aliases": [
+        "diabetic ketoacidosis",
+        "dka"
+      ]
+    },
+    "trap": "Abdominal pain and vomiting can distract toward a primary surgical abdomen.",
+    "expected_red_flag": true,
+    "expected_evidence_sources": [
+      "SYN-GUIDE-METABOLIC-001"
+    ]
+  },
+  {
+    "id": "hyperkalemia",
+    "category": "renal-electrolyte",
+    "note": "A 66-year-old man with chronic kidney disease presents with generalized weakness and palpitations. Blood pressure is 104/68 mmHg, heart rate 52 bpm, respiratory rate 18 breaths/min, and oxygen saturation 97% on room air. Potassium is 6.8 mmol/L, creatinine is 3.1 mg/dL, and ECG shows tall peaked T waves with QRS widening.",
+    "must_consider": {
+      "label": "Hyperkalemia",
+      "aliases": [
+        "hyperkalemia",
+        "severe hyperkalemia"
+      ]
+    },
+    "trap": "Bradycardia may distract toward a primary conduction disorder rather than an electrolyte cause.",
+    "expected_red_flag": false,
+    "expected_evidence_sources": [
+      "SYN-GUIDE-RENAL-001"
+    ]
+  },
+  {
+    "id": "ischemic_stroke",
+    "category": "neurologic",
+    "note": "A 74-year-old woman with atrial fibrillation develops sudden right facial droop, right arm weakness, and expressive aphasia 70 minutes before arrival. Blood pressure is 178/96 mmHg, heart rate 88 bpm, respiratory rate 18 breaths/min, oxygen saturation 96% on room air, and glucose is 118 mg/dL. Non-contrast head CT shows no intracranial hemorrhage.",
+    "must_consider": {
+      "label": "Acute ischemic stroke",
+      "aliases": [
+        "acute ischemic stroke",
+        "ischemic stroke",
+        "cerebral infarction"
+      ]
+    },
+    "trap": "Normal initial CT can be misread as excluding ischemic stroke.",
+    "expected_red_flag": false,
+    "expected_evidence_sources": [
+      "SYN-GUIDE-NEURO-001"
+    ]
+  },
+  {
+    "id": "meningitis",
+    "category": "infectious-neurologic",
+    "note": "A 34-year-old man presents with high fever, severe headache, photophobia, neck stiffness, vomiting, and confusion. Temperature is 39.5 C, blood pressure is 86/54 mmHg, heart rate 124 bpm, respiratory rate 24 breaths/min, and oxygen saturation 95% on room air. WBC is 17.8. No focal neurologic deficit is documented.",
+    "must_consider": {
+      "label": "Acute bacterial meningitis",
+      "aliases": [
+        "bacterial meningitis",
+        "acute meningitis",
+        "meningitis"
+      ]
+    },
+    "trap": "Vomiting and headache could be mistaken for migraine if fever and neck stiffness are underweighted.",
+    "expected_red_flag": true,
+    "expected_evidence_sources": [
+      "SYN-GUIDE-CNSINF-001",
+      "SYN-GUIDE-SEPSIS-001"
+    ]
+  },
+  {
+    "id": "upper_gi_bleed",
+    "category": "gastrointestinal",
+    "note": "A 61-year-old man with long-term NSAID use presents with coffee-ground emesis, melena, dizziness, and near-syncope. Blood pressure is 84/52 mmHg, heart rate 122 bpm, respiratory rate 22 breaths/min, and oxygen saturation 97% on room air. Hemoglobin is 7.2 g/dL and BUN is 48 mg/dL.",
+    "must_consider": {
+      "label": "Upper gastrointestinal bleeding",
+      "aliases": [
+        "upper gastrointestinal bleed",
+        "upper gi bleed",
+        "upper gastrointestinal bleeding",
+        "peptic ulcer bleeding"
+      ]
+    },
+    "trap": "Dizziness and near-syncope could be evaluated as a primary neurologic problem if bleeding history is missed.",
+    "expected_red_flag": true,
+    "expected_evidence_sources": [
+      "SYN-GUIDE-GI-001"
+    ]
+  },
+  {
+    "id": "appendicitis",
+    "category": "abdominal",
+    "note": "A 27-year-old man presents with 18 hours of abdominal pain that began near the umbilicus and migrated to the right lower quadrant, with anorexia, nausea, and low-grade fever. Blood pressure is 122/76 mmHg, heart rate 98 bpm, respiratory rate 18 breaths/min, and oxygen saturation 99% on room air. WBC is 14.2. CT abdomen shows an 11 mm dilated appendix with periappendiceal fat stranding.",
+    "must_consider": {
+      "label": "Acute appendicitis",
+      "aliases": [
+        "acute appendicitis",
+        "appendicitis"
+      ]
+    },
+    "trap": "Nausea and diffuse early pain can distract toward gastroenteritis.",
+    "expected_red_flag": false,
+    "expected_evidence_sources": [
+      "SYN-GUIDE-ABDOMEN-001"
+    ]
+  },
+  {
+    "id": "acute_cholecystitis",
+    "category": "abdominal",
+    "note": "A 48-year-old woman presents with persistent right upper-quadrant pain for 10 hours after a fatty meal, fever, and nausea. Blood pressure is 128/82 mmHg, heart rate 104 bpm, respiratory rate 18 breaths/min, and oxygen saturation 98% on room air. WBC is 15.1. Ultrasound shows gallstones, gallbladder wall thickening, and pericholecystic fluid with a sonographic Murphy sign.",
+    "must_consider": {
+      "label": "Acute cholecystitis",
+      "aliases": [
+        "acute cholecystitis",
+        "cholecystitis"
+      ]
+    },
+    "trap": "Post-prandial pain can be mislabeled as uncomplicated biliary colic despite inflammatory findings.",
+    "expected_red_flag": false,
+    "expected_evidence_sources": [
+      "SYN-GUIDE-ABDOMEN-001"
+    ]
+  },
+  {
+    "id": "pyelonephritis",
+    "category": "urinary-infectious",
+    "note": "A 41-year-old woman presents with fever, dysuria, urinary frequency, right flank pain, and vomiting. Temperature is 39.0 C, blood pressure is 108/68 mmHg, heart rate 112 bpm, respiratory rate 22 breaths/min, and oxygen saturation 98% on room air. Urinalysis shows pyuria, positive nitrites, and leukocyte esterase. WBC is 16.7.",
+    "must_consider": {
+      "label": "Acute pyelonephritis",
+      "aliases": [
+        "acute pyelonephritis",
+        "pyelonephritis",
+        "upper urinary tract infection"
+      ]
+    },
+    "trap": "Vomiting and abdominal discomfort can distract toward a gastrointestinal diagnosis.",
+    "expected_red_flag": false,
+    "expected_evidence_sources": [
+      "SYN-GUIDE-URINARY-001"
+    ]
+  },
+  {
+    "id": "prerenal_aki",
+    "category": "renal",
+    "note": "A 79-year-old woman presents after 4 days of profuse watery diarrhea with weakness and reduced urine output. Blood pressure is 88/54 mmHg, heart rate 110 bpm, respiratory rate 20 breaths/min, and oxygen saturation 97% on room air. Mucous membranes are dry. Creatinine is 3.2 mg/dL from a baseline of 1.0, BUN is 52 mg/dL, and sodium is 149 mmol/L.",
+    "must_consider": {
+      "label": "Prerenal acute kidney injury",
+      "aliases": [
+        "prerenal acute kidney injury",
+        "pre renal acute kidney injury",
+        "prerenal aki",
+        "acute kidney injury due to volume depletion",
+        "volume depletion acute kidney injury"
+      ]
+    },
+    "trap": "Diarrhea may dominate the presentation and obscure the renal complication.",
+    "expected_red_flag": true,
+    "expected_evidence_sources": [
+      "SYN-GUIDE-RENAL-001"
+    ]
+  },
+  {
+    "id": "acute_pancreatitis",
+    "category": "abdominal",
+    "note": "A 44-year-old man presents with severe constant epigastric pain radiating to the back with nausea and vomiting after heavy alcohol intake. Blood pressure is 118/72 mmHg, heart rate 106 bpm, respiratory rate 20 breaths/min, and oxygen saturation 98% on room air. Lipase is 980 U/L. CT abdomen shows pancreatic enlargement with surrounding inflammatory fat stranding.",
+    "must_consider": {
+      "label": "Acute pancreatitis",
+      "aliases": [
+        "acute pancreatitis",
+        "pancreatitis"
+      ]
+    },
+    "trap": "Epigastric pain and nausea can distract toward peptic ulcer disease or ACS.",
+    "expected_red_flag": false,
+    "expected_evidence_sources": [
+      "SYN-GUIDE-ABDOMEN-001"
+    ]
+  },
+  {
+    "id": "thyrotoxicosis",
+    "category": "endocrine",
+    "note": "A 38-year-old woman presents with 2 weeks of heat intolerance, tremor, palpitations, weight loss, anxiety, and frequent stools. Temperature is 38.3 C, blood pressure is 142/78 mmHg, heart rate 132 bpm, respiratory rate 22 breaths/min, and oxygen saturation 99% on room air. TSH is suppressed at 0.01 mIU/L and free T4 is markedly elevated at 4.2 ng/dL.",
+    "must_consider": {
+      "label": "Thyrotoxicosis",
+      "aliases": [
+        "thyrotoxicosis",
+        "hyperthyroidism",
+        "thyroid storm"
+      ]
+    },
+    "trap": "Anxiety and palpitations can be attributed to a primary psychiatric or arrhythmic problem.",
+    "expected_red_flag": false,
+    "expected_evidence_sources": [
+      "SYN-GUIDE-ENDOCRINE-001"
+    ]
+  },
+  {
+    "id": "hypoglycemia",
+    "category": "endocrine-metabolic",
+    "note": "A 63-year-old woman with type 2 diabetes treated with insulin is found confused and diaphoretic before breakfast. Blood pressure is 126/74 mmHg, heart rate 108 bpm, respiratory rate 18 breaths/min, and oxygen saturation 98% on room air. Point-of-care glucose is 38 mg/dL. There is no focal neurologic deficit.",
+    "must_consider": {
+      "label": "Hypoglycemia",
+      "aliases": [
+        "hypoglycemia",
+        "symptomatic hypoglycemia",
+        "insulin associated hypoglycemia"
+      ]
+    },
+    "trap": "Confusion in an older adult can trigger a stroke workup if glucose is ignored.",
+    "expected_red_flag": false,
+    "expected_evidence_sources": [
+      "SYN-GUIDE-ENDOCRINE-001",
+      "SYN-GUIDE-NEURO-001"
+    ]
+  },
+  {
+    "id": "aortic_dissection",
+    "category": "cardiovascular",
+    "note": "A 64-year-old man with longstanding hypertension develops abrupt severe tearing chest pain radiating to the back. Blood pressure is 188/104 mmHg in the right arm and 158/92 mmHg in the left arm, heart rate 104 bpm, respiratory rate 22 breaths/min, and oxygen saturation 97% on room air. Chest X-ray shows a widened mediastinum. The right radial pulse is weaker than the left.",
+    "must_consider": {
+      "label": "Acute aortic dissection",
+      "aliases": [
+        "aortic dissection",
+        "acute aortic dissection",
+        "acute aortic syndrome"
+      ]
+    },
+    "trap": "Severe chest pain can anchor the differential on ACS.",
+    "expected_red_flag": false,
+    "expected_evidence_sources": [
+      "SYN-GUIDE-AORTIC-001",
+      "SYN-GUIDE-CHEST-001"
+    ]
+  },
+  {
+    "id": "acute_pericarditis",
+    "category": "cardiovascular",
+    "note": "A 36-year-old man presents with sharp central chest pain that is worse with inspiration and lying flat and improves when leaning forward. He had a viral upper-respiratory illness one week ago. Blood pressure is 120/76 mmHg, heart rate 96 bpm, respiratory rate 18 breaths/min, and oxygen saturation 98% on room air. ECG shows diffuse concave ST-segment elevations with PR depressions. Troponin is not elevated.",
+    "must_consider": {
+      "label": "Acute pericarditis",
+      "aliases": [
+        "acute pericarditis",
+        "pericarditis"
+      ]
+    },
+    "trap": "ST elevation can cause premature anchoring on acute myocardial infarction.",
+    "expected_red_flag": false,
+    "expected_evidence_sources": [
+      "SYN-GUIDE-CHEST-001",
+      "SYN-GUIDE-CARDIAC-OTHER-001"
+    ]
+  }
+]
