@@ -23,6 +23,21 @@ from app.schemas import (
 from app.store import save_run
 
 
+class PipelineStageError(RuntimeError):
+    def __init__(self, stage: str, message: str):
+        self.stage = stage
+        super().__init__(f"{stage}: {message}")
+
+
+def _stage(stage: str, fn):
+    try:
+        return fn()
+    except PipelineStageError:
+        raise
+    except Exception as exc:
+        raise PipelineStageError(stage, str(exc)) from exc
+
+
 def _contract(model_cls) -> str:
     return json.dumps(model_cls.model_json_schema(), ensure_ascii=False)
 
@@ -266,24 +281,27 @@ def _next_steps(case: ClinicalCase, synthesis: Synthesis, differential: Differen
 
 
 def run_analysis(request: AnalyzeRequest) -> AnalysisResult:
-    case = _intake(request)
-    synthesis = _synthesize(case)
-    evidence = retrieve_evidence(case, synthesis)
-    initial = _differential(case, synthesis, evidence)
-    challenge = _challenge(case, synthesis, evidence)
+    case = _stage("Intake Agent", lambda: _intake(request))
+    synthesis = _stage("Clinical Synthesis Agent", lambda: _synthesize(case))
+    evidence = _stage("Evidence Agent", lambda: retrieve_evidence(case, synthesis))
+    initial = _stage("Reasoning Agent", lambda: _differential(case, synthesis, evidence))
+    challenge = _stage("Challenge Agent", lambda: _challenge(case, synthesis, evidence))
     challenge.disagreements = _compare(initial, challenge)
-    revised = _differential(
-        case,
-        synthesis,
-        evidence,
-        revision_context={
-            "initial_differential": initial.model_dump(mode="json"),
-            "blind_challenge": challenge.model_dump(mode="json"),
-            "instruction": "Re-rank or revise the differential in light of the independent challenge while staying grounded in the record and retrieved evidence.",
-        },
+    revised = _stage(
+        "Differential Revision",
+        lambda: _differential(
+            case,
+            synthesis,
+            evidence,
+            revision_context={
+                "initial_differential": initial.model_dump(mode="json"),
+                "blind_challenge": challenge.model_dump(mode="json"),
+                "instruction": "Re-rank or revise the differential in light of the independent challenge while staying grounded in the record and retrieved evidence.",
+            },
+        ),
     )
-    next_steps = _next_steps(case, synthesis, revised, evidence)
-    safety = evaluate_safety(case, revised, evidence, next_steps)
+    next_steps = _stage("Next-Best-Step Agent", lambda: _next_steps(case, synthesis, revised, evidence))
+    safety = _stage("Safety Gate", lambda: evaluate_safety(case, revised, evidence, next_steps))
     model = get_llm_config().id
     result = AnalysisResult(
         run_id=f"RUN-{uuid.uuid4().hex[:12]}",
