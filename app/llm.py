@@ -43,7 +43,11 @@ def _extract_json(text: str) -> dict[str, Any]:
 
     start, end = text.find("{"), text.rfind("}")
     if start < 0 or end <= start:
-        raise LLMError("Model response did not contain a JSON object.")
+        preview = " ".join(text.split())[:500]
+        raise LLMError(
+            "Model response did not contain a JSON object. "
+            f"Response preview: {preview or '<empty>'}"
+        )
 
     try:
         value = json.loads(text[start : end + 1])
@@ -98,7 +102,11 @@ def llm_json(
                 "role": "system",
                 "content": (
                     system_prompt.strip()
-                    + "\n\nReturn ONLY one valid JSON object. Do not use Markdown or prose outside JSON.\n"
+                    + "\n\nSTRICT OUTPUT REQUIREMENTS:\n"
+                    + "- Return exactly one valid JSON object.\n"
+                    + "- The first non-whitespace character must be { and the last must be }.\n"
+                    + "- Do not output Markdown, code fences, explanations, analysis, reasoning, or <think> tags.\n"
+                    + "- Do not prepend or append any text outside the JSON object.\n"
                     + "Required JSON contract:\n"
                     + response_contract.strip()
                 ),
@@ -107,6 +115,7 @@ def llm_json(
         ],
         "temperature": temperature,
         "max_tokens": min(max_output_tokens or model.maxOutputTokens, model.maxOutputTokens),
+        "response_format": {"type": "json_object"},
         "stream": True,
     }
 
