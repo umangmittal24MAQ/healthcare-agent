@@ -184,11 +184,36 @@ def _normalize_confidence(value):
 
 def _normalize_hypothesis_confidence(raw: dict, key: str) -> dict:
     normalized = dict(raw)
+    raw_items = normalized.get(key) or []
+    if not isinstance(raw_items, list):
+        raise ValueError(f"{key} must be a JSON array of objects.")
+
     items = []
-    for item in normalized.get(key) or []:
-        hypothesis = dict(item)
+    for index, item in enumerate(raw_items):
+        if isinstance(item, dict):
+            hypothesis = dict(item)
+        elif isinstance(item, str):
+            text = item.strip()
+            try:
+                parsed = json.loads(text)
+            except json.JSONDecodeError as exc:
+                preview = " ".join(text.split())[:220]
+                raise ValueError(
+                    f"{key}[{index}] must be a JSON object, but Qwen returned a string: {preview}"
+                ) from exc
+            if not isinstance(parsed, dict):
+                raise ValueError(
+                    f"{key}[{index}] decoded to {type(parsed).__name__}; expected a JSON object."
+                )
+            hypothesis = parsed
+        else:
+            raise ValueError(
+                f"{key}[{index}] must be a JSON object; got {type(item).__name__}."
+            )
+
         hypothesis["confidence"] = _normalize_confidence(hypothesis.get("confidence"))
         items.append(hypothesis)
+
     normalized[key] = items
     return normalized
 
@@ -439,7 +464,8 @@ def _differential(case: ClinicalCase, synthesis: Synthesis, evidence, *, revisio
             "Every hypothesis must cite one or more supplied passage_id values that actually influenced the claim. "
             "Include supporting evidence, opposing evidence, and missing information. Do not make a final diagnosis or prescribe treatment. "
             "Return at most 5 hypotheses. Keep each rationale to at most 2 short sentences, each evidence/missing list to at most 4 concise items, "
-            "and unresolved_questions to at most 5 items. confidence must be low, medium, or high."
+            "and unresolved_questions to at most 5 items. confidence must be low, medium, or high. "
+            "hypotheses MUST be a JSON array of objects matching the contract; never return hypothesis names or prose as array strings."
         ),
         user_payload=prompt,
         response_contract=json.dumps(
