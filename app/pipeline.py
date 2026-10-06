@@ -153,6 +153,30 @@ def _normalize_enum(value, mapping: dict[str, str], default):
     return mapping.get(normalized, default)
 
 
+def _normalize_confidence(value):
+    if value is None:
+        return value
+    normalized = re.sub(r"\s+", " ", str(value).strip().lower())
+    return {
+        "low": "low",
+        "medium": "medium",
+        "moderate": "medium",
+        "intermediate": "medium",
+        "high": "high",
+    }.get(normalized, normalized)
+
+
+def _normalize_hypothesis_confidence(raw: dict, key: str) -> dict:
+    normalized = dict(raw)
+    items = []
+    for item in normalized.get(key) or []:
+        hypothesis = dict(item)
+        hypothesis["confidence"] = _normalize_confidence(hypothesis.get("confidence"))
+        items.append(hypothesis)
+    normalized[key] = items
+    return normalized
+
+
 def _normalize_intake_output(raw: dict) -> dict:
     normalized = dict(raw)
 
@@ -357,6 +381,7 @@ def _differential(case: ClinicalCase, synthesis: Synthesis, evidence, *, revisio
         response_contract=_contract(Differential),
         max_output_tokens=4096,
     )
+    raw = _normalize_hypothesis_confidence(raw, "hypotheses")
     result = Differential.model_validate(raw)
     for index, hypothesis in enumerate(result.hypotheses, start=1):
         hypothesis.rank = index
@@ -398,6 +423,7 @@ def _challenge(case: ClinicalCase, synthesis: Synthesis, evidence) -> Challenge:
         ),
         max_output_tokens=3072,
     )
+    raw = _normalize_hypothesis_confidence(raw, "independent_hypotheses")
     return Challenge.model_validate({**raw, "disagreements": []})
 
 
