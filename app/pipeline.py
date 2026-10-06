@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from difflib import SequenceMatcher
 
 from app.config import get_llm_config
-from app.llm import llm_json
+from app.llm import llm_json, reset_llm_event_callback, set_llm_event_callback
 from app.retrieval import retrieve_evidence
 from app.safety import evaluate_safety
 from app.schemas import (
@@ -29,13 +29,24 @@ class PipelineStageError(RuntimeError):
         super().__init__(f"{stage}: {message}")
 
 
-def _stage(stage: str, fn):
+def _stage(stage: str, fn, emit=None):
+    if emit:
+        emit({"type": "stage_start", "stage": stage})
+
+    token = set_llm_event_callback(
+        (lambda event: emit({**event, "stage": stage})) if emit else None
+    )
     try:
-        return fn()
+        result = fn()
+        if emit:
+            emit({"type": "stage_complete", "stage": stage})
+        return result
     except PipelineStageError:
         raise
     except Exception as exc:
         raise PipelineStageError(stage, str(exc)) from exc
+    finally:
+        reset_llm_event_callback(token)
 
 
 def _contract(model_cls) -> str:
@@ -108,21 +119,28 @@ def _timeline_and_findings(case: ClinicalCase) -> tuple[list[TimelineEvent], lis
     return timeline, abnormal, active or [case.chief_complaint], missing
 
 
-def _record_numbers(case: ClinicalCase) -> set[str]:
-    values = {str(case.age)}
+def _canonical_number(token: str) -> str:
+    value = float(token.replace(",", ""))
+    return str(int(value)) if value.is_integer() else str(value).rstrip("0").rstrip(".")
+
+
+def _record_numbers(case: ClinicalCase, source_note: str) -> set[str]:
+    values = {_canonical_number(str(case.age))}
+    normalized_note = source_note.replace(",", "")
+    for token in re.findall(r"(?<![A-Za-z])\d+(?:\.\d+)?", normalized_note):
+        values.add(_canonical_number(token))
     for lab in case.labs:
         try:
-            value = float(lab.value)
-            values.add(str(int(value)) if value.is_integer() else str(value).rstrip("0").rstrip("."))
+            values.add(_canonical_number(str(lab.value)))
         except (TypeError, ValueError):
             continue
     return values
 
 
-def _validate_problem_numbers(case: ClinicalCase, text: str) -> None:
-    allowed = _record_numbers(case)
-    for token in re.findall(r"(?<![A-Za-z])\d+(?:\.\d+)?", text):
-        canonical = str(int(float(token))) if float(token).is_integer() else token.rstrip("0").rstrip(".")
+def _validate_problem_numbers(case: ClinicalCase, source_note: str, text: str) -> None:
+    allowed = _record_numbers(case, source_note)
+    for token in re.findall(r"(?<![A-Za-z])\d+(?:\.\d+)?", text.replace(",", "")):
+        canonical = _canonical_number(token)
         if canonical not in allowed:
             raise ValueError(f"Problem representation introduced unsupported number: {token}")
 
@@ -148,12 +166,12 @@ def _intake(request: AnalyzeRequest) -> ClinicalCase:
             '"labs":[{"test":string,"value":number|string,"unit":string|null,"reference_range":string|null,"flag":"low|normal|high|critical|unknown","observed_at":ISO-datetime|null}], '
             '"imaging":[{"modality":string,"body_region":string|null,"summary":string,"observed_at":ISO-datetime|null}], "notes":[string]}'
         ),
-        max_output_tokens=3200,
+        max_output_tokens=1400,
     )
     return _parse_case(raw, request)
 
 
-def _synthesize(case: ClinicalCase) -> Synthesis:
+def _synthesize(case: ClinicalCase, source_note: str) -> Synthesis:
     timeline, abnormal, active, missing = _timeline_and_findings(case)
     raw = llm_json(
         system_prompt=(
@@ -166,12 +184,12 @@ def _synthesize(case: ClinicalCase) -> Synthesis:
             "timeline": [event.model_dump(mode="json") for event in timeline],
         },
         response_contract='{"problem_representation": string}',
-        max_output_tokens=600,
+        max_output_tokens=400,
     )
     representation = str(raw.get("problem_representation") or "").strip()
     if not representation:
         raise ValueError("Synthesis model returned an empty problem representation.")
-    _validate_problem_numbers(case, representation)
+    _validate_problem_numbers(case, source_note, representation)
     return Synthesis(
         problem_representation=representation,
         active_problems=active,
@@ -197,7 +215,7 @@ def _differential(case: ClinicalCase, synthesis: Synthesis, evidence, *, revisio
         ),
         user_payload=prompt,
         response_contract=_contract(Differential),
-        max_output_tokens=3600,
+        max_output_tokens=2200,
     )
     result = Differential.model_validate(raw)
     for index, hypothesis in enumerate(result.hypotheses, start=1):
@@ -227,7 +245,7 @@ def _challenge(case: ClinicalCase, synthesis: Synthesis, evidence) -> Challenge:
             '{"independent_hypotheses":[{"name":string,"rationale":string,"confidence":"low|medium|high"}], '
             '"contradictions":[string],"missing_questions":[string],"high_risk_alternatives":[string],"summary":string}'
         ),
-        max_output_tokens=2600,
+        max_output_tokens=1600,
     )
     return Challenge.model_validate({**raw, "disagreements": []})
 
@@ -268,7 +286,7 @@ def _next_steps(case: ClinicalCase, synthesis: Synthesis, differential: Differen
             "retrieved_evidence": [p.model_dump(mode="json") for p in evidence],
         },
         response_contract='{"suggestions": [' + _contract(NextStep) + "]}",
-        max_output_tokens=2600,
+        max_output_tokens=1400,
     )
     suggestions = [NextStep.model_validate(item) for item in raw.get("suggestions", [])]
     if not suggestions:
@@ -280,12 +298,16 @@ def _next_steps(case: ClinicalCase, synthesis: Synthesis, differential: Differen
     return suggestions
 
 
-def run_analysis(request: AnalyzeRequest) -> AnalysisResult:
-    case = _stage("Intake Agent", lambda: _intake(request))
-    synthesis = _stage("Clinical Synthesis Agent", lambda: _synthesize(case))
-    evidence = _stage("Evidence Agent", lambda: retrieve_evidence(case, synthesis))
-    initial = _stage("Reasoning Agent", lambda: _differential(case, synthesis, evidence))
-    challenge = _stage("Challenge Agent", lambda: _challenge(case, synthesis, evidence))
+def run_analysis(request: AnalyzeRequest, emit=None) -> AnalysisResult:
+    case = _stage("Intake Agent", lambda: _intake(request), emit)
+    synthesis = _stage(
+        "Clinical Synthesis Agent",
+        lambda: _synthesize(case, request.note),
+        emit,
+    )
+    evidence = _stage("Evidence Agent", lambda: retrieve_evidence(case, synthesis), emit)
+    initial = _stage("Reasoning Agent", lambda: _differential(case, synthesis, evidence), emit)
+    challenge = _stage("Challenge Agent", lambda: _challenge(case, synthesis, evidence), emit)
     challenge.disagreements = _compare(initial, challenge)
     revised = _stage(
         "Differential Revision",
@@ -299,9 +321,18 @@ def run_analysis(request: AnalyzeRequest) -> AnalysisResult:
                 "instruction": "Re-rank or revise the differential in light of the independent challenge while staying grounded in the record and retrieved evidence.",
             },
         ),
+        emit,
     )
-    next_steps = _stage("Next-Best-Step Agent", lambda: _next_steps(case, synthesis, revised, evidence))
-    safety = _stage("Safety Gate", lambda: evaluate_safety(case, revised, evidence, next_steps))
+    next_steps = _stage(
+        "Next-Best-Step Agent",
+        lambda: _next_steps(case, synthesis, revised, evidence),
+        emit,
+    )
+    safety = _stage(
+        "Safety Gate",
+        lambda: evaluate_safety(case, revised, evidence, next_steps),
+        emit,
+    )
     model = get_llm_config().id
     result = AnalysisResult(
         run_id=f"RUN-{uuid.uuid4().hex[:12]}",
