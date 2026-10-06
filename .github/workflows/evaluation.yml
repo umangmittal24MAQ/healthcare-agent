@@ -1,0 +1,114 @@
+name: 20-Case Diagnostic Evaluation
+
+on:
+  workflow_dispatch:
+    inputs:
+      enforce_thresholds:
+        description: "Fail the aggregate job if baseline quality thresholds are missed"
+        required: false
+        default: false
+        type: boolean
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  evaluate:
+    name: Evaluate case ${{ matrix.case_index }}
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[eval]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        case_index: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+
+    env:
+      DATABASE_PATH: /tmp/healthcare_agent_eval_${{ matrix.case_index }}.db
+      LLM_TIMEOUT_SECONDS: "120"
+      PYTHONPATH: .
+      PYTHONUNBUFFERED: "1"
+      EVAL_CASE_INDEX: ${{ matrix.case_index }}
+      EVAL_OUTPUT_DIR: eval_results
+      INDIAAI_API_KEY: ${{ secrets.INDIAAI_API_KEY || secrets.INDIAAI }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Verify IndiaAI secret is available
+        shell: bash
+        run: |
+          if [ -z "${INDIAAI_API_KEY:-}" ]; then
+            echo "Neither INDIAAI_API_KEY nor INDIAAI repository secret is configured."
+            exit 1
+          fi
+          echo "IndiaAI repository secret is available."
+
+      - name: Run one live synthetic evaluation case
+        run: python scripts/evaluate_case.py
+
+      - name: Upload case result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-case-${{ matrix.case_index }}
+          path: eval_results/*.json
+          if-no-files-found: error
+          retention-days: 14
+
+  aggregate:
+    name: Aggregate 20-case evaluation
+    needs: evaluate
+    if: always() && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[eval]'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: .
+      EVAL_RESULTS_DIR: eval_results
+      ENFORCE_THRESHOLDS: ${{ inputs.enforce_thresholds || false }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Download all case results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: eval-case-*
+          path: eval_results
+          merge-multiple: true
+
+      - name: Build aggregate scorecard
+        run: python scripts/aggregate_evaluation.py
+
+      - name: Upload evaluation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostic-evaluation-report
+          path: |
+            eval_report.md
+            eval_summary.json
+            eval_results/*.json
+          if-no-files-found: warn
+          retention-days: 30
