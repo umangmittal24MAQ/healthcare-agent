@@ -159,12 +159,48 @@ def _intake(request: AnalyzeRequest) -> ClinicalCase:
             "Do not infer diagnoses, treatments, normal values, or missing facts. Use empty arrays or nulls when absent."
         ),
         user_payload=request.note,
-        response_contract=(
-            '{"age": integer 0-120, "sex":"female|male|other|unknown", "chief_complaint":string, '
-            '"symptoms":[{"name":string,"onset":string|null,"severity":"mild|moderate|severe"|null,"notes":string|null}], '
-            '"history":[string], "medications":[{"name":string,"dose":string|null,"frequency":string|null,"status":"active|stopped|unknown"}], '
-            '"labs":[{"test":string,"value":number|string,"unit":string|null,"reference_range":string|null,"flag":"low|normal|high|critical|unknown","observed_at":ISO-datetime|null}], '
-            '"imaging":[{"modality":string,"body_region":string|null,"summary":string,"observed_at":ISO-datetime|null}], "notes":[string]}'
+        response_contract=json.dumps(
+            {
+                "age": 68,
+                "sex": "male",
+                "chief_complaint": "string",
+                "symptoms": [
+                    {
+                        "name": "string",
+                        "onset": None,
+                        "severity": None,
+                        "notes": None,
+                    }
+                ],
+                "history": ["string"],
+                "medications": [
+                    {
+                        "name": "string",
+                        "dose": None,
+                        "frequency": None,
+                        "status": "unknown",
+                    }
+                ],
+                "labs": [
+                    {
+                        "test": "string",
+                        "value": 0,
+                        "unit": None,
+                        "reference_range": None,
+                        "flag": "unknown",
+                        "observed_at": None,
+                    }
+                ],
+                "imaging": [
+                    {
+                        "modality": "string",
+                        "body_region": None,
+                        "summary": "string",
+                        "observed_at": None,
+                    }
+                ],
+                "notes": ["string"],
+            }
         ),
         max_output_tokens=1400,
     )
@@ -183,7 +219,7 @@ def _synthesize(case: ClinicalCase, source_note: str) -> Synthesis:
             "code_derived_abnormal_findings": abnormal,
             "timeline": [event.model_dump(mode="json") for event in timeline],
         },
-        response_contract='{"problem_representation": string}',
+        response_contract='{"problem_representation":"string"}',
         max_output_tokens=400,
     )
     representation = str(raw.get("problem_representation") or "").strip()
@@ -241,9 +277,20 @@ def _challenge(case: ClinicalCase, synthesis: Synthesis, evidence) -> Challenge:
             "synthesis": synthesis.model_dump(mode="json"),
             "retrieved_evidence": [p.model_dump(mode="json") for p in evidence],
         },
-        response_contract=(
-            '{"independent_hypotheses":[{"name":string,"rationale":string,"confidence":"low|medium|high"}], '
-            '"contradictions":[string],"missing_questions":[string],"high_risk_alternatives":[string],"summary":string}'
+        response_contract=json.dumps(
+            {
+                "independent_hypotheses": [
+                    {
+                        "name": "string",
+                        "rationale": "string",
+                        "confidence": "low",
+                    }
+                ],
+                "contradictions": ["string"],
+                "missing_questions": ["string"],
+                "high_risk_alternatives": ["string"],
+                "summary": "string",
+            }
         ),
         max_output_tokens=1600,
     )
