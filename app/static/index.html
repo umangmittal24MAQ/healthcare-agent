@@ -70,10 +70,19 @@ function updateProgress(event){
     detail.textContent=`IndiaAI connected (HTTP ${event.status_code}); waiting for streamed tokens`;
   }else if(event.type==='llm_delta'){
     row.className='progress-row active';
-    detail.textContent=`Qwen is streaming · ${event.received_chars.toLocaleString()} chars received`;
+    const contentChars=Number(event.content_chars||0);
+    const reasoningChars=Number(event.reasoning_chars||0);
+    if(contentChars>0){
+      detail.textContent=`Qwen streaming final JSON · ${contentChars.toLocaleString()} content chars · ${reasoningChars.toLocaleString()} reasoning chars`;
+    }else{
+      detail.textContent=`Qwen thinking · ${reasoningChars.toLocaleString()} reasoning chars`;
+    }
   }else if(event.type==='llm_complete'){
     row.className='progress-row active';
-    detail.textContent=`Qwen response complete · ${event.received_chars.toLocaleString()} chars received`;
+    const contentChars=Number(event.content_chars||0);
+    const reasoningChars=Number(event.reasoning_chars||0);
+    const finish=event.finish_reason?` · finish=${event.finish_reason}`:'';
+    detail.textContent=`Qwen stream complete · ${contentChars.toLocaleString()} final chars · ${reasoningChars.toLocaleString()} reasoning chars${finish}`;
   }else if(event.type==='stage_complete'){
     row.className='progress-row done';
     detail.textContent='Complete';
