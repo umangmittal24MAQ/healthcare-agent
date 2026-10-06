@@ -73,7 +73,7 @@ jobs:
     needs: validate
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[live]')
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       DATABASE_PATH: /tmp/healthcare_agent_live.db
       LLM_TIMEOUT_SECONDS: "120"
