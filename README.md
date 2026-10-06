@@ -192,3 +192,14 @@ This evaluation is an engineering benchmark on synthetic cases, not clinical val
 Qualitative laboratory findings without a numeric measurement are preserved explicitly (for example, `ketones: positive` or `troponin: not elevated`) instead of being rejected by the structured intake schema.
 
 Evidence reranking remains strict about provenance: unknown passage IDs are never accepted. If Qwen returns a mixture of valid candidate IDs and an invalid ID, only the verified candidate IDs are retained. If it returns no valid candidate ID at all, the evidence stage fails visibly.
+
+
+## Model-boundary robustness policy
+
+The pipeline treats LLM output as untrusted structured input rather than requiring Qwen to reproduce one exact spelling or shape every time.
+
+At model boundaries the application normalizes common enum/type variations, preserves qualitative laboratory results, caps list sizes, accepts stringified JSON objects where safe, normalizes next-step categories, and removes unverified extra citation IDs while requiring at least one verified citation for every evidence-grounded item.
+
+Numeric grounding remains strict. Numbers explicitly present in the patient record are preserved. If synthesis introduces a new number only as a derived comparison (for example a difference, delta, change, ratio, or gap), the unsupported numeric calculation is omitted and the qualitative comparison is retained. A new number presented as a patient fact still fails validation.
+
+This keeps model-output variability from becoming case-specific application failures while retaining deterministic evidence and safety boundaries.
