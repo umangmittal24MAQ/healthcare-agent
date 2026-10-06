@@ -5,6 +5,7 @@ import json
 from app.llm import probe_llm
 from app.pipeline import run_analysis
 from app.schemas import AnalyzeRequest
+from app.store import init_db
 
 
 NOTE = (
@@ -30,6 +31,7 @@ EXPECTED_STAGES = [
 
 
 def main() -> None:
+    init_db()
     print("1/2 Probing live MAQ IndiaAI Qwen endpoint...")
     probe = probe_llm()
     if probe.get("ok") is not True:
@@ -51,8 +53,21 @@ def main() -> None:
             print(f"[LLM]   {stage}: connected HTTP {event.get('status_code')}")
         elif event_type == "llm_delta":
             chars = event.get("received_chars", 0)
-            if chars and chars % 250 < 20:
-                print(f"[LLM]   {stage}: streaming ({chars} chars)")
+            if chars and chars % 500 < 20:
+                content_chars = event.get("content_chars", 0)
+                reasoning_chars = event.get("reasoning_chars", 0)
+                phase = "final JSON" if content_chars else "thinking"
+                print(
+                    f"[LLM]   {stage}: {phase} "
+                    f"(content={content_chars}, reasoning={reasoning_chars})"
+                )
+        elif event_type == "llm_complete":
+            print(
+                f"[LLM]   {stage}: stream complete "
+                f"(content={event.get('content_chars', 0)}, "
+                f"reasoning={event.get('reasoning_chars', 0)}, "
+                f"finish={event.get('finish_reason')})"
+            )
         elif event_type == "stage_complete":
             print(f"[PASS]  {stage}")
 
