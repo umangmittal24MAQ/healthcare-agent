@@ -255,33 +255,83 @@ def test_problem_representation_allows_grounded_interarm_bp_difference():
         ],
     )
 
-    _validate_problem_numbers(
+    sanitized = _validate_problem_numbers(
         case,
         note,
         "64-year-old man with abrupt tearing chest pain, widened mediastinum, pulse asymmetry, "
         "and a 30 mmHg inter-arm systolic blood-pressure difference.",
     )
 
+    assert "30 mmHg" not in sanitized
+    assert "inter-arm systolic blood-pressure difference" in sanitized
 
-def test_problem_representation_still_rejects_unprovable_derived_number():
+
+def test_problem_representation_rejects_new_number_presented_as_patient_fact():
     import pytest
     from app.pipeline import _validate_problem_numbers
 
-    note = (
-        "A 64-year-old man has blood pressure 188/104 mmHg in the right arm and "
-        "158/92 mmHg in the left arm."
-    )
+    note = "A 64-year-old man has blood pressure 188/104 mmHg."
     case = ClinicalCase(
-        case_id="CASE-AORTIC-BAD",
+        case_id="CASE-NUMERIC-BAD",
         patient_reference="synthetic",
         age=64,
         sex="male",
         chief_complaint="chest pain",
     )
 
-    with pytest.raises(ValueError, match="unsupported number: 31"):
+    with pytest.raises(ValueError, match="unsupported patient number"):
         _validate_problem_numbers(
             case,
             note,
-            "64-year-old man with a 31 mmHg inter-arm systolic blood-pressure difference.",
+            "64-year-old man with blood pressure 31 mmHg.",
         )
+
+
+
+def test_problem_representation_omits_generic_calculated_values():
+    from app.pipeline import _validate_problem_numbers
+
+    note = "A 50-year-old patient has sodium 140 mmol/L and sodium 132 mmol/L on repeat testing."
+    case = ClinicalCase(
+        case_id="CASE-CALC",
+        patient_reference="synthetic",
+        age=50,
+        sex="unknown",
+        chief_complaint="weakness",
+        labs=[
+            LabResult(test="sodium", value=140, unit="mmol/L"),
+            LabResult(test="sodium repeat", value=132, unit="mmol/L"),
+        ],
+    )
+
+    sanitized = _validate_problem_numbers(
+        case,
+        note,
+        "50-year-old patient with an 8 mmol/L decrease in sodium.",
+    )
+
+    assert "8 mmol/L" not in sanitized
+    assert "decrease in sodium" in sanitized
+
+
+def test_semantic_similarity_handles_extended_diagnosis_names():
+    from app.pipeline import _similar
+
+    assert _similar(
+        "Pulmonary embolism",
+        "Pulmonary embolism as precipitant or co-existing process",
+    )
+    assert _similar(
+        "Acute decompensated heart failure",
+        "Acute decompensated heart failure (HFrEF exacerbation)",
+    )
+    assert not _similar("Pulmonary embolism", "Community-acquired pneumonia")
+
+
+def test_next_step_kind_normalization_handles_common_synonyms():
+    from app.pipeline import _normalize_next_step_kind
+
+    assert _normalize_next_step_kind("diagnostic test") == "test"
+    assert _normalize_next_step_kind("lab") == "test"
+    assert _normalize_next_step_kind("physical examination") == "observation"
+    assert _normalize_next_step_kind("history question") == "question"
