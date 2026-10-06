@@ -38,7 +38,7 @@ jobs:
         run: python -m pip check
 
       - name: Compile Python sources
-        run: python -m compileall -q app tests
+        run: python -m compileall -q app tests scripts
 
       - name: Run test suite
         run: python -m pytest -q
@@ -67,3 +67,41 @@ jobs:
       - name: Print server log on failure
         if: failure()
         run: cat /tmp/healthcare-agent.log || true
+
+  live-indiaai:
+    name: Live MAQ IndiaAI end-to-end
+    needs: validate
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[live]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_PATH: /tmp/healthcare_agent_live.db
+      LLM_TIMEOUT_SECONDS: "120"
+      INDIAAI_API_KEY: ${{ secrets.INDIAAI_API_KEY || secrets.INDIAAI }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Verify IndiaAI secret is available
+        shell: bash
+        run: |
+          if [ -z "${INDIAAI_API_KEY:-}" ]; then
+            echo "Neither INDIAAI_API_KEY nor INDIAAI repository secret is configured."
+            exit 1
+          fi
+          echo "IndiaAI repository secret is available."
+
+      - name: Run live Qwen probe and full clinical pipeline
+        run: python scripts/live_validation.py
