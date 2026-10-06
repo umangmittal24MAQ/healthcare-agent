@@ -396,7 +396,7 @@ def _challenge(case: ClinicalCase, synthesis: Synthesis, evidence) -> Challenge:
                 "summary": "string",
             }
         ),
-        max_output_tokens=1600,
+        max_output_tokens=3072,
     )
     return Challenge.model_validate({**raw, "disagreements": []})
 
