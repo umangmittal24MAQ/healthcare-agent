@@ -60,3 +60,27 @@ def test_problem_representation_accepts_numbers_from_original_note():
         "68-year-old man with HFrEF (EF 30%), 3 days of dyspnea, BP 162/98, "
         "heart rate 102, respiratory rate 24, oxygen saturation 87%, WBC 7.1 and BNP 1450.",
     )
+
+
+def test_intake_normalizes_common_clinical_enum_synonyms():
+    from app.pipeline import _normalize_intake_output
+
+    raw = {
+        "sex": "M",
+        "symptoms": [{"name": "dyspnea", "severity": "Severe"}],
+        "medications": [{"name": "furosemide", "status": "currently taking"}],
+        "labs": [
+            {"test": "BNP", "value": 1450, "flag": "elevated"},
+            {"test": "Sodium", "value": 128, "flag": "decreased"},
+            {"test": "WBC", "value": 7.1, "flag": "within normal limits"},
+        ],
+    }
+
+    normalized = _normalize_intake_output(raw)
+
+    assert normalized["sex"] == "male"
+    assert normalized["symptoms"][0]["severity"] == "severe"
+    assert normalized["medications"][0]["status"] == "active"
+    assert normalized["labs"][0]["flag"] == "high"
+    assert normalized["labs"][1]["flag"] == "low"
+    assert normalized["labs"][2]["flag"] == "normal"
