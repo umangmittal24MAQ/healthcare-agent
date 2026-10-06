@@ -160,12 +160,60 @@ def _record_numbers(case: ClinicalCase, source_note: str) -> set[str]:
     return values
 
 
+def _derived_record_numbers(source_note: str) -> set[str]:
+    """Return narrowly allowed arithmetic facts provable from the source note.
+
+    Currently this only derives inter-arm blood-pressure differences when the
+    source explicitly contains at least two BP pairs. This keeps numeric
+    grounding strict while allowing a synthesis to say, for example, that
+    188/104 vs 158/92 represents a 30 mmHg systolic difference.
+    """
+    pairs = [
+        (float(systolic), float(diastolic))
+        for systolic, diastolic in re.findall(
+            r"(?<!\d)(\d{2,3}(?:\.\d+)?)\s*/\s*(\d{2,3}(?:\.\d+)?)\s*mmhg\b",
+            source_note.lower().replace(",", ""),
+        )
+    ]
+    if len(pairs) < 2:
+        return set()
+
+    derived: set[str] = set()
+    for index, left in enumerate(pairs):
+        for right in pairs[index + 1 :]:
+            for a, b in zip(left, right):
+                difference = abs(a - b)
+                if difference > 0:
+                    derived.add(_canonical_number(str(difference)))
+    return derived
+
+
 def _validate_problem_numbers(case: ClinicalCase, source_note: str, text: str) -> None:
     allowed = _record_numbers(case, source_note)
-    for token in re.findall(r"(?<![A-Za-z])\d+(?:\.\d+)?", text.replace(",", "")):
+    allowed_derived = _derived_record_numbers(source_note)
+    normalized_text = text.replace(",", "")
+
+    for match in re.finditer(r"(?<![A-Za-z])\d+(?:\.\d+)?", normalized_text):
+        token = match.group(0)
         canonical = _canonical_number(token)
-        if canonical not in allowed:
-            raise ValueError(f"Problem representation introduced unsupported number: {token}")
+        if canonical in allowed:
+            continue
+
+        if canonical in allowed_derived:
+            context = normalized_text[max(0, match.start() - 80) : match.end() + 80].lower()
+            if any(
+                phrase in context
+                for phrase in (
+                    "difference",
+                    "inter-arm",
+                    "interarm",
+                    "between arms",
+                    "between the arms",
+                )
+            ):
+                continue
+
+        raise ValueError(f"Problem representation introduced unsupported number: {token}")
 
 
 def _normalize_enum(value, mapping: dict[str, str], default):
@@ -447,7 +495,9 @@ def _synthesize(case: ClinicalCase, source_note: str) -> Synthesis:
     raw = llm_json(
         system_prompt=(
             "Write one concise clinical problem representation for clinician decision support. "
-            "Use only supplied facts. Do not make a diagnosis, recommend treatment, or invent numbers."
+            "Use only supplied facts. Do not make a diagnosis, recommend treatment, or invent numbers. "
+            "Prefer repeating documented measurements rather than calculating new values. If a numeric comparison "
+            "is clinically useful, only state a direct arithmetic difference that is provable from supplied measurements."
         ),
         user_payload={
             "case": case.model_dump(mode="json"),
