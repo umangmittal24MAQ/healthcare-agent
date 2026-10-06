@@ -185,3 +185,10 @@ Run it manually from **Actions → 20-Case Diagnostic Evaluation → Run workflo
 The workflow offers an optional `enforce_thresholds` input. Baseline runs can leave this disabled so the workflow reports observed quality without hiding failures; once the baseline is stable, enable it to make the aggregate job fail when defined quality thresholds are missed.
 
 This evaluation is an engineering benchmark on synthetic cases, not clinical validation or evidence of suitability for real-world diagnosis.
+
+
+### Evaluation robustness
+
+Qualitative laboratory findings without a numeric measurement are preserved explicitly (for example, `ketones: positive` or `troponin: not elevated`) instead of being rejected by the structured intake schema.
+
+Evidence reranking remains strict about provenance: unknown passage IDs are never accepted. If Qwen returns a mixture of valid candidate IDs and an invalid ID, only the verified candidate IDs are retained. If it returns no valid candidate ID at all, the evidence stage fails visibly.
