@@ -306,7 +306,7 @@ def _intake(request: AnalyzeRequest) -> ClinicalCase:
                 "notes": ["string"],
             }
         ),
-        max_output_tokens=1400,
+        max_output_tokens=4096,
     )
     return _parse_case(raw, request)
 
@@ -324,7 +324,7 @@ def _synthesize(case: ClinicalCase, source_note: str) -> Synthesis:
             "timeline": [event.model_dump(mode="json") for event in timeline],
         },
         response_contract='{"problem_representation":"string"}',
-        max_output_tokens=400,
+        max_output_tokens=3072,
     )
     representation = str(raw.get("problem_representation") or "").strip()
     if not representation:
@@ -355,7 +355,7 @@ def _differential(case: ClinicalCase, synthesis: Synthesis, evidence, *, revisio
         ),
         user_payload=prompt,
         response_contract=_contract(Differential),
-        max_output_tokens=2200,
+        max_output_tokens=4096,
     )
     result = Differential.model_validate(raw)
     for index, hypothesis in enumerate(result.hypotheses, start=1):
@@ -437,7 +437,7 @@ def _next_steps(case: ClinicalCase, synthesis: Synthesis, differential: Differen
             "retrieved_evidence": [p.model_dump(mode="json") for p in evidence],
         },
         response_contract='{"suggestions": [' + _contract(NextStep) + "]}",
-        max_output_tokens=1400,
+        max_output_tokens=3072,
     )
     suggestions = [NextStep.model_validate(item) for item in raw.get("suggestions", [])]
     if not suggestions:
