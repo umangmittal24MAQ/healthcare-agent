@@ -121,3 +121,27 @@ final
 ```
 
 `llm_delta` is emitted only when the IndiaAI gateway actually sends streamed Qwen output. Structured JSON is accumulated server-side and validated only after the stream completes. There is no alternate model or inference fallback.
+
+
+## GitHub Actions validation
+
+The repository includes `.github/workflows/ci.yml`.
+
+Every push validates dependencies, Python compilation, unit/integration tests, application startup, `/health`, and the clinician UI.
+
+A real MAQ IndiaAI end-to-end job is also available. It uses the repository secret `INDIAAI_API_KEY` or `INDIAAI` without printing the secret value. The live job runs on manual workflow dispatch or on a main-branch commit whose message contains `[live]`.
+
+The live validation exercises the configured Qwen model through the full synthetic workflow:
+
+```text
+IndiaAI probe
+→ Intake
+→ Clinical synthesis
+→ Evidence retrieval/reranking
+→ Initial differential
+→ Blind challenge
+→ Differential revision
+→ Next-best diagnostic steps
+→ Safety gate
+→ persistence
+```
