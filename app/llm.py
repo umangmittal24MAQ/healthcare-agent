@@ -52,7 +52,13 @@ def _extract_json(text: str) -> dict[str, Any]:
     try:
         value = json.loads(text[start : end + 1])
     except json.JSONDecodeError as exc:
-        raise LLMError(f"Model returned invalid JSON: {exc}") from exc
+        error_at = exc.pos
+        preview_start = max(0, error_at - 120)
+        preview_end = min(len(text), error_at + 120)
+        preview = " ".join(text[preview_start:preview_end].split())
+        raise LLMError(
+            f"Model returned invalid JSON: {exc}. Around error: {preview}"
+        ) from exc
 
     if not isinstance(value, dict):
         raise LLMError("Model response must be a JSON object.")
@@ -233,13 +239,14 @@ def llm_json(
                     }
                 )
 
+                if finish_reason == "length":
+                    raise LLMError(
+                        "IndiaAI exhausted the output-token budget before completing the structured response "
+                        f"(content_chars={content_chars}, reasoning_chars={reasoning_chars}, "
+                        f"events={received_events}). Increase max_output_tokens or make the stage output more concise."
+                    )
+
                 if not content:
-                    if finish_reason == "length":
-                        raise LLMError(
-                            "IndiaAI exhausted the output-token budget while reasoning before producing "
-                            f"final assistant content (reasoning_chars={reasoning_chars}, "
-                            f"events={received_events}). Increase max_output_tokens for this stage."
-                        )
                     raise LLMError(
                         "IndiaAI stream completed without final assistant content "
                         f"(reasoning_chars={reasoning_chars}, finish_reason={finish_reason or 'unknown'}, "
