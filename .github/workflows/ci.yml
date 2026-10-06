@@ -78,6 +78,7 @@ jobs:
       DATABASE_PATH: /tmp/healthcare_agent_live.db
       LLM_TIMEOUT_SECONDS: "120"
       PYTHONPATH: .
+      PYTHONUNBUFFERED: "1"
       INDIAAI_API_KEY: ${{ secrets.INDIAAI_API_KEY || secrets.INDIAAI }}
 
     steps:
