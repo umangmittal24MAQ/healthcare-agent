@@ -266,6 +266,6 @@ def probe_llm() -> dict[str, Any]:
         system_prompt="You are a connectivity probe. Return the requested JSON exactly.",
         user_payload="Return an object with ok=true.",
         response_contract='{"ok": true}',
-        max_output_tokens=64,
+        max_output_tokens=1024,
     )
     return {"ok": result.get("ok") is True, "model": model.id}
