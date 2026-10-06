@@ -1,0 +1,97 @@
+[
+  {
+    "source_id": "SYN-GUIDE-SEPSIS-001",
+    "title": "Synthetic Acute Systemic Infection Assessment Reference",
+    "tags": [
+      "sepsis",
+      "systemic infection",
+      "fever",
+      "tachycardia",
+      "tachypnea",
+      "leukocytosis",
+      "lactate",
+      "hypotension",
+      "shock",
+      "oxygen saturation"
+    ],
+    "passages": [
+      "In a synthetic acute-care case, a converging pattern of fever, tachycardia, tachypnea, leukocytosis, elevated lactate, and hypotension should trigger urgent clinician review for systemic infection and associated organ dysfunction rather than being interpreted from any single measurement.",
+      "A sepsis-like pattern requires assessment for a plausible infection source, organ dysfunction, hemodynamic deterioration, and competing non-infectious causes of shock or systemic inflammation.",
+      "Worsening hypotension, rising lactate, hypoxemia, or other signs of physiologic deterioration are high-risk findings that should be escalated to direct human clinical assessment; this prototype must not initiate treatment or replace emergency evaluation."
+    ]
+  },
+  {
+    "source_id": "SYN-GUIDE-RESP-001",
+    "title": "Synthetic Respiratory Assessment Reference",
+    "tags": [
+      "cough",
+      "fever",
+      "dyspnea",
+      "pneumonia",
+      "respiratory"
+    ],
+    "passages": [
+      "For a synthetic adult case with cough, fever, and dyspnea, review respiratory rate, oxygen saturation, lung examination findings, and the overall severity pattern before narrowing the differential.",
+      "A focal opacity or consolidation described on chest imaging can support a lower respiratory infectious pattern when it is concordant with symptoms, but imaging findings should be interpreted together with history, examination, and laboratory context.",
+      "Respiratory infection patterns can overlap with viral illness and non-infectious cardiopulmonary conditions; contradictory findings and alternative explanations should remain visible during review."
+    ]
+  },
+  {
+    "source_id": "SYN-GUIDE-VIRAL-001",
+    "title": "Synthetic Viral Respiratory Illness Reference",
+    "tags": [
+      "viral",
+      "fever",
+      "cough",
+      "exposure",
+      "respiratory"
+    ],
+    "passages": [
+      "Fever and cough may occur in viral respiratory illness. Exposure history, upper-respiratory symptoms, local epidemiology, and relevant testing can help distinguish viral from other respiratory patterns in a synthetic case.",
+      "A viral hypothesis should be reconsidered when strong focal findings or another coherent explanation better account for the available evidence."
+    ]
+  },
+  {
+    "source_id": "SYN-GUIDE-DYSPNEA-001",
+    "title": "Synthetic Dyspnea Differential Reference",
+    "tags": [
+      "dyspnea",
+      "shortness of breath",
+      "cardiac",
+      "pulmonary",
+      "thromboembolic"
+    ],
+    "passages": [
+      "Shortness of breath has infectious and non-infectious causes. Synthetic case review can include cardiac history, volume-status findings, thromboembolic risk factors, ECG findings, and other discriminating information when relevant.",
+      "A challenge step should explicitly check whether fever or inflammatory findings sufficiently explain dyspnea or whether a competing cardiopulmonary process remains plausible."
+    ]
+  },
+  {
+    "source_id": "SYN-GUIDE-CHEST-001",
+    "title": "Synthetic Chest Pain Assessment Reference",
+    "tags": [
+      "chest pain",
+      "cardiac",
+      "ischemia",
+      "musculoskeletal"
+    ],
+    "passages": [
+      "For a synthetic chest-pain presentation, potentially important cardiac causes should remain in consideration until discriminating history, ECG findings, biomarkers, and risk context are reviewed.",
+      "Musculoskeletal chest pain becomes more plausible when pain is reproducible with palpation or movement, but those findings should be explicitly documented rather than assumed."
+    ]
+  },
+  {
+    "source_id": "SYN-GUIDE-SAFETY-001",
+    "title": "Synthetic Diagnostic Decision-Support Safety Reference",
+    "tags": [
+      "safety",
+      "uncertainty",
+      "missing information",
+      "review"
+    ],
+    "passages": [
+      "When available information is incomplete, the decision-support system should surface uncertainty and missing information instead of inventing patient facts or presenting a definitive diagnosis.",
+      "All diagnostic hypotheses and next-step suggestions produced by this prototype require explicit clinician review before any real-world action."
+    ]
+  }
+]
