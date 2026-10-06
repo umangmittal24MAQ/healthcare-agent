@@ -21,7 +21,7 @@ class FakeResponse:
         chunks = [
             {"choices": [{"delta": {"reasoning_content": "checking"}}]},
             {"choices": [{"delta": {"content": '{"ok":'}}]},
-            {"choices": [{"delta": {"content": "true}"}, "finish_reason": "stop"]},
+            {"choices": [{"delta": {"content": "true}"}, "finish_reason": "stop"}]},
         ]
         for chunk in chunks:
             yield "data: " + json.dumps(chunk)
