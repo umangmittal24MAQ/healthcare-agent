@@ -128,6 +128,7 @@ def llm_json(
         "temperature": temperature,
         "max_tokens": min(max_output_tokens or model.maxOutputTokens, model.maxOutputTokens),
         "response_format": {"type": "json_object"},
+        "chat_template_kwargs": {"enable_thinking": settings.llm_enable_thinking},
         "stream": True,
     }
 
@@ -145,7 +146,13 @@ def llm_json(
         pool=min(settings.llm_timeout_seconds, 10.0),
     )
 
-    _emit({"type": "llm_request", "model": model.id})
+    _emit(
+        {
+            "type": "llm_request",
+            "model": model.id,
+            "thinking_enabled": settings.llm_enable_thinking,
+        }
+    )
 
     try:
         with httpx.Client(timeout=timeout) as client:
