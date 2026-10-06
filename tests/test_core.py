@@ -227,3 +227,61 @@ def test_non_elevated_qualitative_lab_can_have_null_value():
     assert lab.value is None
     assert lab.flag == "normal"
     assert lab.interpretation == "not elevated"
+
+
+
+def test_problem_representation_allows_grounded_interarm_bp_difference():
+    from app.pipeline import _validate_problem_numbers
+
+    note = (
+        "A 64-year-old man with longstanding hypertension develops abrupt severe tearing chest pain "
+        "radiating to the back. Blood pressure is 188/104 mmHg in the right arm and 158/92 mmHg "
+        "in the left arm, heart rate 104 bpm, respiratory rate 22 breaths/min, and oxygen saturation "
+        "97% on room air. Chest X-ray shows a widened mediastinum. The right radial pulse is weaker "
+        "than the left."
+    )
+    case = ClinicalCase(
+        case_id="CASE-AORTIC",
+        patient_reference="synthetic",
+        age=64,
+        sex="male",
+        chief_complaint="abrupt tearing chest pain",
+        vitals=[
+            VitalSign(test="right arm blood pressure", value="188/104", unit="mmHg"),
+            VitalSign(test="left arm blood pressure", value="158/92", unit="mmHg"),
+            VitalSign(test="heart rate", value=104, unit="bpm"),
+            VitalSign(test="respiratory rate", value=22, unit="breaths/min"),
+            VitalSign(test="oxygen saturation", value=97, unit="%"),
+        ],
+    )
+
+    _validate_problem_numbers(
+        case,
+        note,
+        "64-year-old man with abrupt tearing chest pain, widened mediastinum, pulse asymmetry, "
+        "and a 30 mmHg inter-arm systolic blood-pressure difference.",
+    )
+
+
+def test_problem_representation_still_rejects_unprovable_derived_number():
+    import pytest
+    from app.pipeline import _validate_problem_numbers
+
+    note = (
+        "A 64-year-old man has blood pressure 188/104 mmHg in the right arm and "
+        "158/92 mmHg in the left arm."
+    )
+    case = ClinicalCase(
+        case_id="CASE-AORTIC-BAD",
+        patient_reference="synthetic",
+        age=64,
+        sex="male",
+        chief_complaint="chest pain",
+    )
+
+    with pytest.raises(ValueError, match="unsupported number: 31"):
+        _validate_problem_numbers(
+            case,
+            note,
+            "64-year-old man with a 31 mmHg inter-arm systolic blood-pressure difference.",
+        )
