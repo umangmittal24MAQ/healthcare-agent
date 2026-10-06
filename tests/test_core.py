@@ -171,3 +171,59 @@ def test_hypothesis_normalizer_ignores_out_of_contract_sixth_item():
     assert len(normalized["hypotheses"]) == 5
     assert all(isinstance(item, dict) for item in normalized["hypotheses"])
     assert normalized["unresolved_questions"] == ["What changed from baseline?"]
+
+
+
+def test_qualitative_lab_without_numeric_value_is_preserved():
+    from app.pipeline import _normalize_intake_output, _timeline_and_findings
+    from app.schemas import ClinicalCase
+
+    raw = {
+        "age": 24,
+        "sex": "male",
+        "chief_complaint": "vomiting and lethargy",
+        "symptoms": [],
+        "history": ["type 1 diabetes"],
+        "medications": [],
+        "vitals": [],
+        "labs": [
+            {
+                "test": "serum ketones",
+                "value": None,
+                "unit": None,
+                "reference_range": None,
+                "flag": "unknown",
+                "result": "positive",
+                "observed_at": None,
+            }
+        ],
+        "imaging": [],
+        "notes": [],
+    }
+
+    normalized = _normalize_intake_output(raw)
+    normalized["case_id"] = "CASE-QUAL"
+    normalized["patient_reference"] = "synthetic"
+    case = ClinicalCase.model_validate(normalized)
+
+    assert case.labs[0].value is None
+    assert case.labs[0].interpretation == "positive"
+
+    timeline, _, _, _ = _timeline_and_findings(case)
+    assert timeline[0].detail.startswith("positive;")
+    assert "None" not in timeline[0].detail
+
+
+def test_non_elevated_qualitative_lab_can_have_null_value():
+    from app.schemas import LabResult
+
+    lab = LabResult(
+        test="troponin",
+        value=None,
+        flag="normal",
+        interpretation="not elevated",
+    )
+
+    assert lab.value is None
+    assert lab.flag == "normal"
+    assert lab.interpretation == "not elevated"
