@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from app.schemas import ClinicalCase, Differential, EvidencePassage, Hypothesis, LabResult, NextStep
+from app.schemas import ClinicalCase, Differential, EvidencePassage, Hypothesis, LabResult, NextStep, VitalSign
 from app.safety import evaluate_safety
 
 
@@ -15,7 +15,7 @@ def test_safety_escalates_configured_low_oxygen(tmp_path, monkeypatch):
         age=52,
         sex="male",
         chief_complaint="fever and cough",
-        labs=[LabResult(test="Oxygen saturation", value=88, unit="%")],
+        vitals=[VitalSign(test="oxygen saturation", value=88, unit="%")],
     )
     evidence = [EvidencePassage(passage_id="P1", source_id="S1", source_title="Reference", text="Respiratory review.", retrieval_score=1.0)]
     differential = Differential(hypotheses=[Hypothesis(rank=1,name="Respiratory infection",rationale="Possible pattern for review.",supporting_evidence=["Oxygen saturation 88%"],confidence="medium",citation_ids=["P1"])])
@@ -69,6 +69,7 @@ def test_intake_normalizes_common_clinical_enum_synonyms():
         "sex": "M",
         "symptoms": [{"name": "dyspnea", "severity": "Severe"}],
         "medications": [{"name": "furosemide", "status": "currently taking"}],
+        "vitals": [{"test": "oxygen saturation", "value": 87, "flag": "decreased"}],
         "labs": [
             {"test": "BNP", "value": 1450, "flag": "elevated"},
             {"test": "Sodium", "value": 128, "flag": "decreased"},
@@ -81,6 +82,7 @@ def test_intake_normalizes_common_clinical_enum_synonyms():
     assert normalized["sex"] == "male"
     assert normalized["symptoms"][0]["severity"] == "severe"
     assert normalized["medications"][0]["status"] == "active"
+    assert normalized["vitals"][0]["flag"] == "low"
     assert normalized["labs"][0]["flag"] == "high"
     assert normalized["labs"][1]["flag"] == "low"
     assert normalized["labs"][2]["flag"] == "normal"
