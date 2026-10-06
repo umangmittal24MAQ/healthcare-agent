@@ -145,3 +145,13 @@ IndiaAI probe
 → Safety gate
 → persistence
 ```
+
+
+### Live IndiaAI CI
+
+The GitHub Actions workflow has two layers:
+
+- deterministic validation for dependencies, compilation, unit/integration tests, app startup, SSE behavior, persistence, safety, and mocked IndiaAI transport;
+- an opt-in live MAQ IndiaAI job using the repository secret `INDIAAI_API_KEY` (or `INDIAAI`) that probes Qwen and runs the full synthetic clinical pipeline.
+
+The live job is triggered by `workflow_dispatch` or a commit message containing `[live]`. Secrets are never printed; only stage/progress metadata is logged.
