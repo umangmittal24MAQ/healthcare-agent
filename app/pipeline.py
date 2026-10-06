@@ -26,6 +26,7 @@ from app.store import save_run
 class PipelineStageError(RuntimeError):
     def __init__(self, stage: str, message: str):
         self.stage = stage
+        self.message = message
         super().__init__(f"{stage}: {message}")
 
 
