@@ -50,6 +50,7 @@ def _query_text(case: ClinicalCase, synthesis: Synthesis) -> str:
         case.chief_complaint,
         *(s.name for s in case.symptoms),
         *case.history,
+        *(f"{vital.test} {vital.value} {vital.flag}" for vital in case.vitals),
         *(f"{lab.test} {lab.value} {lab.flag}" for lab in case.labs),
         *(img.summary for img in case.imaging),
         synthesis.problem_representation,
