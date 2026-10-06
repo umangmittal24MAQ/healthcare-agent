@@ -407,3 +407,71 @@ def test_configuration_is_single_maq_qwen_provider():
     requirements = open("requirements.txt", encoding="utf-8").read().lower()
     assert "groq" not in requirements
     assert "openai" not in requirements
+
+
+
+def test_retrieval_ignores_unknown_id_when_verified_ids_remain(monkeypatch):
+    case = ClinicalCase(
+        case_id="CASE-RERANK",
+        patient_reference="synthetic",
+        age=59,
+        sex="male",
+        chief_complaint="chest pain",
+        symptoms=[],
+        history=["coronary risk factors"],
+    )
+    synthesis = Synthesis(
+        problem_representation="59-year-old man with pressure-like chest pain and ischemic features.",
+        active_problems=["chest pain"],
+        abnormal_findings=[],
+        timeline=[],
+        missing_information=[],
+    )
+
+    captured = {}
+
+    def fake_llm_json(**kwargs):
+        candidates = kwargs["user_payload"]["candidates"]
+        valid_id = candidates[0]["passage_id"]
+        captured["valid_id"] = valid_id
+        return {
+            "ordered_ids": [
+                valid_id,
+                "SYN-GUIDE-CARDIOC-OTHER-001-P3",
+            ]
+        }
+
+    monkeypatch.setattr(retrieval, "llm_json", fake_llm_json)
+
+    result = retrieval.retrieve_evidence(case, synthesis)
+
+    assert [item.passage_id for item in result] == [captured["valid_id"]]
+    assert all(item.passage_id != "SYN-GUIDE-CARDIOC-OTHER-001-P3" for item in result)
+
+
+def test_retrieval_still_fails_when_all_reranker_ids_are_invalid(monkeypatch):
+    import pytest
+
+    case = ClinicalCase(
+        case_id="CASE-RERANK-BAD",
+        patient_reference="synthetic",
+        age=59,
+        sex="male",
+        chief_complaint="chest pain",
+    )
+    synthesis = Synthesis(
+        problem_representation="59-year-old man with chest pain.",
+        active_problems=["chest pain"],
+        abnormal_findings=[],
+        timeline=[],
+        missing_information=[],
+    )
+
+    monkeypatch.setattr(
+        retrieval,
+        "llm_json",
+        lambda **kwargs: {"ordered_ids": ["NOT-A-REAL-PASSAGE-ID"]},
+    )
+
+    with pytest.raises(ValueError, match="no valid candidate IDs"):
+        retrieval.retrieve_evidence(case, synthesis)
