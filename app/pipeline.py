@@ -146,8 +146,108 @@ def _validate_problem_numbers(case: ClinicalCase, source_note: str, text: str) -
             raise ValueError(f"Problem representation introduced unsupported number: {token}")
 
 
+def _normalize_enum(value, mapping: dict[str, str], default):
+    if value is None:
+        return default
+    normalized = re.sub(r"\s+", " ", str(value).strip().lower())
+    return mapping.get(normalized, default)
+
+
+def _normalize_intake_output(raw: dict) -> dict:
+    normalized = dict(raw)
+
+    normalized["sex"] = _normalize_enum(
+        normalized.get("sex"),
+        {
+            "male": "male",
+            "m": "male",
+            "man": "male",
+            "female": "female",
+            "f": "female",
+            "woman": "female",
+            "other": "other",
+            "non-binary": "other",
+            "nonbinary": "other",
+            "unknown": "unknown",
+            "unspecified": "unknown",
+        },
+        "unknown",
+    )
+
+    symptoms = []
+    for item in normalized.get("symptoms") or []:
+        symptom = dict(item)
+        symptom["severity"] = _normalize_enum(
+            symptom.get("severity"),
+            {
+                "mild": "mild",
+                "moderate": "moderate",
+                "severe": "severe",
+            },
+            None,
+        )
+        symptoms.append(symptom)
+    normalized["symptoms"] = symptoms
+
+    medications = []
+    for item in normalized.get("medications") or []:
+        medication = dict(item)
+        medication["status"] = _normalize_enum(
+            medication.get("status"),
+            {
+                "active": "active",
+                "current": "active",
+                "currently taking": "active",
+                "taking": "active",
+                "stopped": "stopped",
+                "discontinued": "stopped",
+                "inactive": "stopped",
+                "unknown": "unknown",
+                "unspecified": "unknown",
+            },
+            "unknown",
+        )
+        medications.append(medication)
+    normalized["medications"] = medications
+
+    labs = []
+    for item in normalized.get("labs") or []:
+        lab = dict(item)
+        lab["flag"] = _normalize_enum(
+            lab.get("flag"),
+            {
+                "low": "low",
+                "decreased": "low",
+                "reduced": "low",
+                "below normal": "low",
+                "below range": "low",
+                "high": "high",
+                "elevated": "high",
+                "raised": "high",
+                "increased": "high",
+                "above normal": "high",
+                "above range": "high",
+                "normal": "normal",
+                "within normal limits": "normal",
+                "within normal range": "normal",
+                "wnl": "normal",
+                "critical": "critical",
+                "critically high": "critical",
+                "critically low": "critical",
+                "unknown": "unknown",
+                "unspecified": "unknown",
+                "not provided": "unknown",
+            },
+            "unknown",
+        )
+        labs.append(lab)
+    normalized["labs"] = labs
+
+    return normalized
+
+
 def _parse_case(raw: dict, request: AnalyzeRequest) -> ClinicalCase:
-    raw = dict(raw)
+    raw = _normalize_intake_output(raw)
     raw["case_id"] = f"CASE-{uuid.uuid4().hex[:12]}"
     raw["patient_reference"] = request.patient_reference or "synthetic-case"
     return ClinicalCase.model_validate(raw)
@@ -157,7 +257,10 @@ def _intake(request: AnalyzeRequest) -> ClinicalCase:
     raw = llm_json(
         system_prompt=(
             "Extract explicit facts from a synthetic/de-identified clinical note into structured fields. "
-            "Do not infer diagnoses, treatments, normal values, or missing facts. Use empty arrays or nulls when absent."
+            "Do not infer diagnoses, treatments, normal values, or missing facts. Use empty arrays or nulls when absent. "
+            "Use only these normalized enum values: sex=male|female|other|unknown; "
+            "symptom severity=mild|moderate|severe|null; medication status=active|stopped|unknown; "
+            "lab flag=low|normal|high|critical|unknown. For example, map elevated/raised to high and decreased/reduced to low."
         ),
         user_payload=request.note,
         response_contract=json.dumps(
