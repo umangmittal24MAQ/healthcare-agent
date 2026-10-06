@@ -35,6 +35,15 @@ class LabResult(BaseModel):
     observed_at: datetime | None = None
 
 
+class VitalSign(BaseModel):
+    test: str
+    value: float | str
+    unit: str | None = None
+    reference_range: str | None = None
+    flag: Literal["low", "normal", "high", "critical", "unknown"] = "unknown"
+    observed_at: datetime | None = None
+
+
 class ImagingSummary(BaseModel):
     modality: str
     body_region: str | None = None
@@ -51,13 +60,14 @@ class ClinicalCase(BaseModel):
     symptoms: list[Symptom] = Field(default_factory=list)
     history: list[str] = Field(default_factory=list)
     medications: list[Medication] = Field(default_factory=list)
+    vitals: list[VitalSign] = Field(default_factory=list)
     labs: list[LabResult] = Field(default_factory=list)
     imaging: list[ImagingSummary] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
 
 
 class TimelineEvent(BaseModel):
-    event_type: Literal["symptom", "lab", "imaging", "history", "medication"]
+    event_type: Literal["symptom", "vital", "lab", "imaging", "history", "medication"]
     label: str
     detail: str
     observed_at: datetime | None = None
