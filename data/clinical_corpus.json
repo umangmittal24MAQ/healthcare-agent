@@ -93,5 +93,273 @@
       "When available information is incomplete, the decision-support system should surface uncertainty and missing information instead of inventing patient facts or presenting a definitive diagnosis.",
       "All diagnostic hypotheses and next-step suggestions produced by this prototype require explicit clinician review before any real-world action."
     ]
+  },
+  {
+    "source_id": "SYN-GUIDE-HF-001",
+    "title": "Synthetic Acute Heart Failure Assessment Reference",
+    "tags": [
+      "heart failure",
+      "hfrEF",
+      "orthopnea",
+      "edema",
+      "bnp",
+      "cardiomegaly",
+      "kerley b lines",
+      "pulmonary edema",
+      "pleural effusion"
+    ],
+    "passages": [
+      "In a synthetic dyspnea case, a pattern of known heart failure, progressive orthopnea, peripheral edema, elevated natriuretic peptide, cardiomegaly, Kerley B lines, interstitial edema, or bilateral pleural effusions supports review for acute heart-failure decompensation while precipitating causes remain open.",
+      "Heart-failure decompensation should be challenged for alternative or precipitating processes such as ischemia, arrhythmia, infection, pulmonary embolic disease, medication non-adherence, or a hypertensive surge when the record contains discriminating clues.",
+      "Hypoxemia, hypotension, marked tachypnea, worsening renal function, or other physiologic deterioration in a heart-failure presentation should prompt urgent human clinical assessment."
+    ]
+  },
+  {
+    "source_id": "SYN-GUIDE-ACS-001",
+    "title": "Synthetic Acute Coronary Syndrome Assessment Reference",
+    "tags": [
+      "acute coronary syndrome",
+      "acs",
+      "nstemi",
+      "stemi",
+      "troponin",
+      "st depression",
+      "chest pressure",
+      "ischemia",
+      "myocardial infarction"
+    ],
+    "passages": [
+      "For a synthetic chest-pain case, pressure-like discomfort, radiation, diaphoresis, ischemic ECG changes, elevated cardiac biomarkers, and vascular risk factors support consideration of acute coronary syndrome while alternative chest-pain causes remain visible.",
+      "Serial ECG and cardiac-biomarker trends can help distinguish an evolving ischemic process from non-ischemic chest pain in a synthetic diagnostic workflow; the prototype should not issue treatment orders.",
+      "Atypical symptoms do not by themselves exclude ischemia, particularly when objective ECG or biomarker findings support myocardial injury."
+    ]
+  },
+  {
+    "source_id": "SYN-GUIDE-PE-001",
+    "title": "Synthetic Pulmonary Embolism Assessment Reference",
+    "tags": [
+      "pulmonary embolism",
+      "venous thromboembolism",
+      "pleuritic pain",
+      "hypoxemia",
+      "tachycardia",
+      "calf swelling",
+      "immobility",
+      "flight"
+    ],
+    "passages": [
+      "Sudden dyspnea, pleuritic chest pain, tachycardia, hypoxemia, unilateral leg swelling, and recent immobility or prolonged travel can support consideration of pulmonary embolic disease in a synthetic case.",
+      "A pulmonary embolism hypothesis should be compared with pneumonia, acute heart failure, pneumothorax, and other cardiopulmonary explanations using the available imaging, infection findings, volume-status clues, and thromboembolic risk context.",
+      "Hypoxemia or hemodynamic deterioration in a suspected thromboembolic presentation is a high-risk finding requiring direct clinician assessment."
+    ]
+  },
+  {
+    "source_id": "SYN-GUIDE-OBSTRUCTIVE-001",
+    "title": "Synthetic Obstructive Airway Exacerbation Reference",
+    "tags": [
+      "copd",
+      "asthma",
+      "wheeze",
+      "sputum",
+      "peak flow",
+      "hypercapnia",
+      "obstructive airway",
+      "bronchospasm"
+    ],
+    "passages": [
+      "In a synthetic COPD case, increased dyspnea, sputum volume or purulence, wheeze, hyperinflation, hypoxemia, or hypercapnia can support an acute exacerbation while focal consolidation or another competing cause should be considered separately.",
+      "In a synthetic asthma case, episodic wheeze, chest tightness, exposure-related onset, reduced peak expiratory flow, increased work of breathing, and tachypnea support an acute asthma exacerbation pattern.",
+      "Obstructive-airway presentations should retain alternative explanations such as pneumonia, heart failure, pulmonary embolic disease, or pneumothorax when the record contains discordant features."
+    ]
+  },
+  {
+    "source_id": "SYN-GUIDE-METABOLIC-001",
+    "title": "Synthetic Hyperglycemic Crisis Assessment Reference",
+    "tags": [
+      "dka",
+      "diabetic ketoacidosis",
+      "glucose",
+      "ketones",
+      "anion gap",
+      "bicarbonate",
+      "ph",
+      "kussmaul",
+      "vomiting"
+    ],
+    "passages": [
+      "A synthetic case with diabetes, marked hyperglycemia, positive ketones, low bicarbonate, acidemia, and an elevated anion gap supports consideration of diabetic ketoacidosis.",
+      "Vomiting, abdominal discomfort, dehydration, and deep rapid respirations can accompany a hyperglycemic ketoacidotic pattern and should not automatically be assigned to a primary gastrointestinal or pulmonary disorder.",
+      "Missing medication, infection, ischemia, or other precipitating information should be surfaced as an unresolved question rather than inferred."
+    ]
+  },
+  {
+    "source_id": "SYN-GUIDE-RENAL-001",
+    "title": "Synthetic Renal and Electrolyte Assessment Reference",
+    "tags": [
+      "acute kidney injury",
+      "aki",
+      "prerenal",
+      "volume depletion",
+      "creatinine",
+      "bun",
+      "hyperkalemia",
+      "potassium",
+      "peaked t waves",
+      "qrs"
+    ],
+    "passages": [
+      "A synthetic case with recent fluid loss, hypotension or dehydration findings, reduced urine output, and a creatinine rise from baseline supports consideration of volume-depletion-associated prerenal acute kidney injury while other renal causes remain open.",
+      "Markedly elevated potassium together with compatible ECG abnormalities such as peaked T waves or QRS widening supports consideration of clinically important hyperkalemia in a synthetic record.",
+      "Renal and electrolyte findings should be interpreted with medication history, baseline kidney function, volume status, and other possible causes rather than from an isolated laboratory value."
+    ]
+  },
+  {
+    "source_id": "SYN-GUIDE-NEURO-001",
+    "title": "Synthetic Acute Neurologic Assessment Reference",
+    "tags": [
+      "stroke",
+      "ischemic stroke",
+      "aphasia",
+      "weakness",
+      "facial droop",
+      "ct head",
+      "hypoglycemia",
+      "focal neurologic deficit"
+    ],
+    "passages": [
+      "Sudden focal neurologic deficits such as unilateral weakness, facial droop, aphasia, or visual change support urgent review for an acute cerebrovascular event in a synthetic case.",
+      "A non-contrast head CT without hemorrhage does not by itself exclude early ischemia; timing, focal examination findings, glucose, and competing mimics remain important to diagnostic reasoning.",
+      "Hypoglycemia can cause confusion or neurologic symptoms and should remain visible as a reversible stroke mimic when low glucose is explicitly documented."
+    ]
+  },
+  {
+    "source_id": "SYN-GUIDE-CNSINF-001",
+    "title": "Synthetic Central Nervous System Infection Reference",
+    "tags": [
+      "meningitis",
+      "fever",
+      "headache",
+      "neck stiffness",
+      "photophobia",
+      "confusion",
+      "cns infection"
+    ],
+    "passages": [
+      "A synthetic presentation combining fever, severe headache, neck stiffness, photophobia, vomiting, or altered mental status supports consideration of meningitis or another central nervous system infection.",
+      "The reasoning process should distinguish meningitis from migraine, subarachnoid hemorrhage, encephalitis, and other causes using the documented neurologic examination, systemic findings, and relevant testing.",
+      "Hypotension, marked physiologic deterioration, or other systemic red flags in a suspected CNS infection require urgent direct clinician assessment."
+    ]
+  },
+  {
+    "source_id": "SYN-GUIDE-GI-001",
+    "title": "Synthetic Gastrointestinal Bleeding Assessment Reference",
+    "tags": [
+      "upper gi bleed",
+      "gastrointestinal bleeding",
+      "hematemesis",
+      "coffee ground",
+      "melena",
+      "hemoglobin",
+      "bun",
+      "hypotension"
+    ],
+    "passages": [
+      "Coffee-ground emesis, hematemesis, melena, anemia, or compatible risk factors support consideration of upper gastrointestinal bleeding in a synthetic case.",
+      "Dizziness, syncope, tachycardia, hypotension, falling hemoglobin, or other evidence of physiologic compromise should be surfaced as severity findings rather than treated as isolated symptoms.",
+      "The differential should keep alternative bleeding sources and non-bleeding explanations visible when the presentation is incomplete."
+    ]
+  },
+  {
+    "source_id": "SYN-GUIDE-ABDOMEN-001",
+    "title": "Synthetic Acute Abdominal Assessment Reference",
+    "tags": [
+      "appendicitis",
+      "cholecystitis",
+      "pancreatitis",
+      "right lower quadrant",
+      "right upper quadrant",
+      "lipase",
+      "gallstones",
+      "appendix"
+    ],
+    "passages": [
+      "Migration of abdominal pain toward the right lower quadrant with anorexia, leukocytosis, and imaging showing an enlarged inflamed appendix supports consideration of acute appendicitis in a synthetic case.",
+      "Persistent right upper-quadrant pain with fever, leukocytosis, gallstones, gallbladder-wall thickening, pericholecystic fluid, or a sonographic Murphy sign supports consideration of acute cholecystitis rather than uncomplicated biliary colic.",
+      "Severe epigastric pain radiating to the back with a markedly elevated lipase and compatible pancreatic imaging supports consideration of acute pancreatitis while cardiac and other abdominal alternatives remain visible."
+    ]
+  },
+  {
+    "source_id": "SYN-GUIDE-URINARY-001",
+    "title": "Synthetic Urinary Infection Assessment Reference",
+    "tags": [
+      "pyelonephritis",
+      "flank pain",
+      "dysuria",
+      "frequency",
+      "nitrite",
+      "pyuria",
+      "cva tenderness",
+      "urinary tract infection"
+    ],
+    "passages": [
+      "Fever, flank pain, urinary symptoms, costovertebral-angle tenderness, pyuria, nitrites, leukocyte esterase, or leukocytosis can support consideration of acute pyelonephritis in a synthetic case.",
+      "Vomiting or abdominal discomfort can accompany an upper urinary infection and should be interpreted with urinary findings rather than assumed to represent a primary gastrointestinal disorder.",
+      "Hypotension, elevated lactate, or other systemic deterioration in a urinary-infection presentation should trigger urgent clinician review."
+    ]
+  },
+  {
+    "source_id": "SYN-GUIDE-ENDOCRINE-001",
+    "title": "Synthetic Endocrine and Glucose Assessment Reference",
+    "tags": [
+      "thyrotoxicosis",
+      "hyperthyroidism",
+      "tsh",
+      "free t4",
+      "tremor",
+      "heat intolerance",
+      "hypoglycemia",
+      "glucose",
+      "insulin"
+    ],
+    "passages": [
+      "Heat intolerance, tremor, weight loss, palpitations, tachycardia, suppressed TSH, and elevated free thyroid hormone levels can support consideration of thyrotoxicosis in a synthetic case.",
+      "Documented low blood glucose in a patient with confusion, diaphoresis, weakness, or neurologic symptoms supports consideration of symptomatic hypoglycemia and should be compared with competing neurologic explanations.",
+      "Endocrine findings should remain grounded in documented laboratory and clinical data; severity labels or precipitating factors should not be invented."
+    ]
+  },
+  {
+    "source_id": "SYN-GUIDE-AORTIC-001",
+    "title": "Synthetic Acute Aortic Syndrome Reference",
+    "tags": [
+      "aortic dissection",
+      "acute aortic syndrome",
+      "tearing chest pain",
+      "back pain",
+      "pulse deficit",
+      "blood pressure difference",
+      "widened mediastinum"
+    ],
+    "passages": [
+      "Abrupt severe chest or back pain described as tearing, a pulse deficit or inter-arm blood-pressure difference, and mediastinal widening can support consideration of acute aortic syndrome in a synthetic case.",
+      "Acute aortic syndrome can overlap with acute coronary syndrome and other chest-pain causes; discriminating vascular examination and imaging findings should remain explicit in the reasoning trace.",
+      "The decision-support system should surface the potentially high-risk alternative without making an autonomous final diagnosis."
+    ]
+  },
+  {
+    "source_id": "SYN-GUIDE-CARDIAC-OTHER-001",
+    "title": "Synthetic Non-Ischemic Cardiac Chest Pain Reference",
+    "tags": [
+      "pericarditis",
+      "pleuritic chest pain",
+      "positional chest pain",
+      "diffuse st elevation",
+      "pr depression",
+      "viral"
+    ],
+    "passages": [
+      "Sharp pleuritic chest pain that worsens when supine and improves when leaning forward, together with diffuse ST-segment elevation or PR depression, can support consideration of acute pericarditis in a synthetic case.",
+      "Diffuse rather than territorial ECG changes, positional symptoms, biomarker context, and recent viral illness can help distinguish pericarditis from acute myocardial infarction.",
+      "The differential should keep ischemic and other dangerous chest-pain causes visible until the available evidence is reconciled."
+    ]
   }
 ]
