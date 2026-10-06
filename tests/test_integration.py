@@ -24,6 +24,7 @@ from app.schemas import (
     SafetyCheck,
     SafetyResult,
     Synthesis,
+    VitalSign,
 )
 
 
@@ -66,7 +67,7 @@ def test_retrieval_uses_curated_corpus_and_validates_reranked_ids(monkeypatch):
         chief_complaint="progressive dyspnea",
         symptoms=[],
         history=["HFrEF"],
-        labs=[LabResult(test="Oxygen saturation", value=87, unit="%", flag="low")],
+        vitals=[VitalSign(test="oxygen saturation", value=87, unit="%", flag="unknown")],
     )
     synthesis = Synthesis(
         problem_representation="68-year-old man with HFrEF and progressive dyspnea with oxygen saturation 87%.",
@@ -117,8 +118,14 @@ def test_full_pipeline_orchestration_with_blind_challenge(monkeypatch):
                 ],
                 "history": ["coronary artery disease", "HFrEF EF 30%", "hypertension"],
                 "medications": [],
+                "vitals": [
+                    {"test": "systolic blood pressure", "value": 162, "unit": "mmHg", "reference_range": None, "flag": "unknown", "observed_at": None},
+                    {"test": "diastolic blood pressure", "value": 98, "unit": "mmHg", "reference_range": None, "flag": "unknown", "observed_at": None},
+                    {"test": "heart rate", "value": 102, "unit": "bpm", "reference_range": None, "flag": "unknown", "observed_at": None},
+                    {"test": "respiratory rate", "value": 24, "unit": "breaths/min", "reference_range": None, "flag": "unknown", "observed_at": None},
+                    {"test": "oxygen saturation", "value": 87, "unit": "%", "reference_range": None, "flag": "unknown", "observed_at": None},
+                ],
                 "labs": [
-                    {"test": "Oxygen saturation", "value": 87, "unit": "%", "reference_range": None, "flag": "decreased", "observed_at": None},
                     {"test": "WBC", "value": 7.1, "unit": None, "reference_range": None, "flag": "within normal limits", "observed_at": None},
                     {"test": "BNP", "value": 1450, "unit": "pg/mL", "reference_range": None, "flag": "elevated", "observed_at": None},
                 ],
@@ -240,8 +247,9 @@ def test_full_pipeline_orchestration_with_blind_challenge(monkeypatch):
     result = pipeline.run_analysis(request, emit=events.append)
 
     assert result.model == "qwen-3.8-27b"
-    assert result.case.labs[2].flag == "high"
-    assert result.case.labs[0].flag == "low"
+    assert result.case.labs[1].flag == "high"
+    assert result.case.vitals[4].test == "oxygen saturation"
+    assert result.case.vitals[4].value == 87
     assert result.initial_differential.hypotheses[0].name == "Acute decompensated heart failure"
     assert result.revised_differential.hypotheses[1].name == "Pulmonary embolic disease"
     assert any("Pulmonary embolic disease" in item for item in result.challenge.disagreements)
