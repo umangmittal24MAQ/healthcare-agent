@@ -1,0 +1,9 @@
+{
+  "id": "qwen-3.8-27b",
+  "name": "Qwen 3.8 27B",
+  "url": "https://indiaai.maqsoftware.net/v1/chat/completions",
+  "toolCalling": true,
+  "vision": true,
+  "maxInputTokens": 122880,
+  "maxOutputTokens": 8192
+}
