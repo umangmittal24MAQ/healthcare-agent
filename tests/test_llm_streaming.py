@@ -74,6 +74,7 @@ def test_llm_streaming_client_reassembles_json_and_requests_json_mode(monkeypatc
     assert FakeClient.captured["json"]["model"] == "qwen-3.8-27b"
     assert FakeClient.captured["json"]["stream"] is True
     assert FakeClient.captured["json"]["response_format"] == {"type": "json_object"}
+    assert FakeClient.captured["json"]["chat_template_kwargs"] == {"enable_thinking": True}
     assert FakeClient.captured["headers"]["Accept"] == "text/event-stream"
 
     event_types = [event["type"] for event in events]
@@ -99,3 +100,24 @@ def test_extract_json_error_contains_response_preview():
     message = str(exc.value)
     assert "did not contain a JSON object" in message
     assert "I will explain" in message
+
+
+def test_llm_can_disable_qwen_thinking_for_fast_evaluation(monkeypatch):
+    import app.config as config
+
+    monkeypatch.setattr(llm.httpx, "Client", FakeClient)
+    monkeypatch.setenv("LLM_ENABLE_THINKING", "false")
+    config.get_settings.cache_clear()
+
+    try:
+        result = llm.llm_json(
+            system_prompt="Return probe result.",
+            user_payload={"probe": True},
+            response_contract='{"ok":true}',
+            max_output_tokens=64,
+        )
+    finally:
+        config.get_settings.cache_clear()
+
+    assert result == {"ok": True}
+    assert FakeClient.captured["json"]["chat_template_kwargs"] == {"enable_thinking": False}
