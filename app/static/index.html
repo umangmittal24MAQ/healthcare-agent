@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Diagnostic Decision Support</title>
+<style>
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172033;background:#f5f7fb}*{box-sizing:border-box}body{margin:0}.shell{max-width:1180px;margin:0 auto;padding:32px 20px 56px}.top{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:22px}.top h1{font-size:30px;margin:0 0 8px}.sub{color:#62708a;max-width:760px;line-height:1.55}.badge{background:#eaf0ff;color:#3156b5;border-radius:999px;padding:8px 12px;font-size:13px;font-weight:700;white-space:nowrap}.notice{background:#fff7e6;border:1px solid #f0d59a;border-radius:12px;padding:12px 14px;color:#735516;margin-bottom:20px}.grid{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:20px}.card{background:#fff;border:1px solid #e2e7f0;border-radius:16px;box-shadow:0 8px 28px rgba(20,34,66,.06);padding:18px}.card h2,.card h3{margin:0 0 12px}label{display:block;font-size:13px;font-weight:700;margin:14px 0 6px}textarea,input{width:100%;border:1px solid #cfd7e6;border-radius:10px;padding:11px 12px;font:inherit;background:#fff}textarea{min-height:360px;resize:vertical;line-height:1.45}.check{display:flex;gap:9px;align-items:flex-start;font-size:13px;color:#556176;margin:12px 0}.check input{width:auto;margin-top:2px}.btn{border:0;border-radius:10px;padding:11px 14px;font-weight:800;cursor:pointer}.primary{background:#3156b5;color:#fff;width:100%}.secondary{background:#eef2f8;color:#29364f}.btn:disabled{opacity:.55;cursor:not-allowed}.empty{display:grid;place-items:center;min-height:480px;color:#7a879f;text-align:center;padding:30px}.section{border-top:1px solid #edf0f5;padding-top:16px;margin-top:16px}.section:first-child{border-top:0;padding-top:0;margin-top:0}.muted{color:#738097}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef2f8;font-size:12px;margin:2px 5px 2px 0}.status{font-weight:800;text-transform:uppercase;font-size:12px;letter-spacing:.04em}.pass{color:#1d7a46}.pass_with_warnings{color:#8a6715}.escalate,.block{color:#b13b3b}.hyp{padding:12px;border:1px solid #e3e8f2;border-radius:12px;margin:10px 0}.hyp strong{display:block;margin-bottom:4px}.cite{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;background:#f4f6f9;padding:3px 6px;border-radius:6px}.evidence{font-size:13px;line-height:1.45;padding:10px 0;border-bottom:1px solid #edf0f5}.evidence:last-child{border-bottom:0}.warning{background:#fff2f2;border:1px solid #f1caca;padding:10px;border-radius:10px;color:#8d2828}.row{display:flex;gap:8px;flex-wrap:wrap}.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.45);border-top-color:white;border-radius:50%;animation:spin .8s linear infinite;margin-right:8px;vertical-align:-2px}@keyframes spin{to{transform:rotate(360deg)}}@media(max-width:850px){.grid{grid-template-columns:1fr}.top{display:block}.badge{display:inline-block;margin-top:10px}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="top"><div><h1>Diagnostic Decision Support</h1><div class="sub">Retrieve-first clinical reasoning with an independent blind challenge, evidence trace, next-best diagnostic steps, safety checks, and explicit human review.</div></div><div class="badge">Qwen 3.8 27B · MAQ IndiaAI</div></div>
+  <div class="notice"><b>Synthetic/de-identified data only.</b> This system provides advisory decision support and does not make a final diagnosis or treatment decision.</div>
+  <div class="grid">
+    <div class="card">
+      <h2>Patient intake</h2>
+      <label for="reference">Patient reference <span class="muted">(optional)</span></label>
+      <input id="reference" maxlength="64" placeholder="e.g. case-2026-001" />
+      <label for="note">Clinical note</label>
+      <textarea id="note" placeholder="Paste a synthetic/de-identified note containing symptoms, history, medications, labs, and imaging summaries..."></textarea>
+      <label class="check"><input id="synthetic" type="checkbox" /> <span>I confirm this input is synthetic or de-identified and is being used for prototype evaluation.</span></label>
+      <button id="analyze" class="btn primary" onclick="analyze()">Run decision support</button>
+      <div id="error" class="warning" style="display:none;margin-top:12px"></div>
+    </div>
+    <div class="card" id="output"><div class="empty"><div><b>No run yet</b><br><span class="muted">Paste a case note and run the pipeline. Each stage executes once.</span></div></div></div>
+  </div>
+</div>
+<script>
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const list=a=>(a&&a.length)?'<ul>'+a.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'<div class="muted">None documented</div>';
+function hyp(h){return `<div class="hyp"><strong>${h.rank}. ${esc(h.name)} <span class="muted">· ${esc(h.confidence)}</span></strong><div>${esc(h.rationale)}</div><div class="row" style="margin-top:7px">${(h.citation_ids||[]).map(x=>`<span class="cite">${esc(x)}</span>`).join('')}</div></div>`}
+function render(d){
+ const safety=d.safety||{}; const challenge=d.challenge||{};
+ document.getElementById('output').innerHTML=`
+ <div class="section"><h2>Clinical synthesis</h2><div>${esc(d.synthesis.problem_representation)}</div><div style="margin-top:8px">${(d.synthesis.abnormal_findings||[]).map(x=>`<span class="pill">${esc(x)}</span>`).join('')}</div></div>
+ <div class="section"><h3>Retrieved evidence</h3>${(d.retrieved_evidence||[]).map(p=>`<div class="evidence"><b>${esc(p.source_title)}</b> <span class="cite">${esc(p.passage_id)}</span><br>${esc(p.text)}</div>`).join('')}</div>
+ <div class="section"><h3>Initial differential</h3>${(d.initial_differential.hypotheses||[]).map(hyp).join('')}</div>
+ <div class="section"><h3>Independent challenge</h3><div>${esc(challenge.summary)}</div>${list(challenge.disagreements)}<div class="muted" style="margin-top:8px">The challenge is generated without seeing the primary differential; comparison happens in code afterward.</div></div>
+ <div class="section"><h3>Revised differential</h3>${(d.revised_differential.hypotheses||[]).map(hyp).join('')}</div>
+ <div class="section"><h3>Next-best diagnostic steps</h3>${(d.next_steps||[]).map(s=>`<div class="hyp"><strong>${esc(s.kind)} · ${esc(s.action)}</strong><div>${esc(s.rationale)}</div><div class="muted" style="margin-top:5px">Helps distinguish: ${esc((s.distinguishes_between||[]).join(' · '))}</div></div>`).join('')}</div>
+ <div class="section"><h3>Safety gate <span class="status ${esc(safety.status)}">${esc(safety.status)}</span></h3>${safety.urgent_warning?`<div class="warning">${esc(safety.urgent_warning)}</div>`:''}${list(safety.blocked_reasons)}${list(safety.warnings)}</div>
+ <div class="section"><h3>Human review</h3><div class="row"><button class="btn secondary" onclick="review('${esc(d.run_id)}','accepted')">Accept for review record</button><button class="btn secondary" onclick="review('${esc(d.run_id)}','rejected')">Reject</button></div><div id="reviewMsg" class="muted" style="margin-top:8px"></div></div>`;
+}
+async function analyze(){const btn=document.getElementById('analyze'),err=document.getElementById('error');err.style.display='none';if(!document.getElementById('synthetic').checked){err.textContent='Please confirm the synthetic/de-identified data boundary.';err.style.display='block';return}btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Running pipeline';try{const r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({note:document.getElementById('note').value,patient_reference:document.getElementById('reference').value||null,confirm_synthetic:true})});const d=await r.json();if(!r.ok)throw new Error(d.detail||'Analysis failed');render(d)}catch(e){err.textContent=e.message;err.style.display='block'}finally{btn.disabled=false;btn.textContent='Run decision support'}}
+async function review(runId,decision){const r=await fetch(`/api/runs/${encodeURIComponent(runId)}/review`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({decision})});document.getElementById('reviewMsg').textContent=r.ok?`Review recorded: ${decision}`:'Unable to record review';}
+</script>
+</body>
+</html>
