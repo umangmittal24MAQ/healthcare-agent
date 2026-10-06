@@ -77,7 +77,8 @@ The UI requires confirmation that the pasted content is synthetic or de-identifi
 
 ## API
 
-- `POST /api/analyze` — run the complete pipeline once
+- `POST /api/analyze/stream` — primary UI path; streams stage and Qwen activity as SSE, then emits the final validated result
+- `POST /api/analyze` — non-streaming API path
 - `GET /api/runs/{run_id}` — retrieve the persisted exact run output
 - `POST /api/runs/{run_id}/review` — record clinician accept/reject review
 - `GET /health` — service and model configuration check
@@ -102,3 +103,21 @@ This is a decision-support prototype, not a diagnostic device. It must not make 
 ```bash
 pytest -q
 ```
+
+
+## Live progress
+
+The browser uses the streaming analysis endpoint. Each run emits:
+
+```text
+stage_start
+llm_request
+llm_connected
+llm_delta
+llm_complete
+stage_complete
+...
+final
+```
+
+`llm_delta` is emitted only when the IndiaAI gateway actually sends streamed Qwen output. Structured JSON is accumulated server-side and validated only after the stream completes. There is no alternate model or inference fallback.
