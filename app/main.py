@@ -9,8 +9,8 @@ from fastapi.responses import FileResponse
 from pydantic import ValidationError
 
 from app.config import get_llm_config
-from app.llm import LLMError
-from app.pipeline import run_analysis
+from app.llm import LLMError, probe_llm
+from app.pipeline import PipelineStageError, run_analysis
 from app.schemas import AnalysisResult, AnalyzeRequest, ReviewRequest
 from app.store import get_run, init_db, save_review
 
@@ -42,12 +42,26 @@ def health():
     return {"status": "ok", "model": model.id, "llm_endpoint": str(model.url)}
 
 
+@app.get("/health/llm")
+def health_llm():
+    try:
+        result = probe_llm()
+        return {"status": "ok", **result}
+    except LLMError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
 @app.post("/api/analyze", response_model=AnalysisResult)
 def analyze(request: AnalyzeRequest):
     try:
         return run_analysis(request)
+    except PipelineStageError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail={"stage": exc.stage, "message": str(exc)},
+        ) from exc
     except (LLMError, ValidationError, ValueError) as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+        raise HTTPException(status_code=502, detail={"stage": "unknown", "message": str(exc)}) from exc
 
 
 @app.get("/api/runs/{run_id}")
