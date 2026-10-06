@@ -104,3 +104,38 @@ def test_confidence_normalization_maps_moderate_to_medium():
     assert normalized["independent_hypotheses"][0]["confidence"] == "medium"
     assert normalized["independent_hypotheses"][1]["confidence"] == "medium"
     assert normalized["independent_hypotheses"][2]["confidence"] == "high"
+
+
+def test_hypothesis_normalizer_accepts_stringified_json_object():
+    import json
+    from app.pipeline import _normalize_hypothesis_confidence
+
+    raw = {
+        "hypotheses": [
+            json.dumps(
+                {
+                    "rank": 1,
+                    "name": "Example",
+                    "rationale": "For review.",
+                    "confidence": "moderate",
+                    "citation_ids": ["P1"],
+                }
+            )
+        ]
+    }
+
+    normalized = _normalize_hypothesis_confidence(raw, "hypotheses")
+
+    assert normalized["hypotheses"][0]["name"] == "Example"
+    assert normalized["hypotheses"][0]["confidence"] == "medium"
+
+
+def test_hypothesis_normalizer_rejects_plain_prose_string():
+    import pytest
+    from app.pipeline import _normalize_hypothesis_confidence
+
+    with pytest.raises(ValueError, match="must be a JSON object"):
+        _normalize_hypothesis_confidence(
+            {"hypotheses": ["Acute decompensated heart failure"]},
+            "hypotheses",
+        )
