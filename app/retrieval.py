@@ -51,7 +51,11 @@ def _query_text(case: ClinicalCase, synthesis: Synthesis) -> str:
         *(s.name for s in case.symptoms),
         *case.history,
         *(f"{vital.test} {vital.value} {vital.flag}" for vital in case.vitals),
-        *(f"{lab.test} {lab.value} {lab.flag}" for lab in case.labs),
+        *(
+            f"{lab.test} {lab.value if lab.value is not None else ''} "
+            f"{lab.interpretation or ''} {lab.flag}"
+            for lab in case.labs
+        ),
         *(img.summary for img in case.imaging),
         synthesis.problem_representation,
         *synthesis.abnormal_findings,
@@ -94,12 +98,28 @@ def retrieve_evidence(case: ClinicalCase, synthesis: Synthesis) -> list[Evidence
         raise ValueError("Evidence reranker returned no passage IDs.")
 
     by_id = {item["passage_id"]: (score, item) for score, item in candidates}
-    unknown = [str(pid) for pid in ordered_ids if str(pid) not in by_id]
-    if unknown:
-        raise ValueError(f"Evidence reranker cited unknown candidate IDs: {unknown}")
+    requested_ids = [str(pid) for pid in ordered_ids]
+    unknown = [pid for pid in requested_ids if pid not in by_id]
+
+    # Never accept a hallucinated passage ID. If Qwen returns a mix of valid
+    # candidate IDs and one malformed/unknown ID, keep only the verified IDs
+    # instead of throwing away an otherwise usable reranking. If every returned
+    # ID is invalid, fail visibly because there is no model-verified reranking.
+    valid_ids: list[str] = []
+    seen: set[str] = set()
+    for pid in requested_ids:
+        if pid in by_id and pid not in seen:
+            valid_ids.append(pid)
+            seen.add(pid)
+
+    if not valid_ids:
+        raise ValueError(
+            "Evidence reranker returned no valid candidate IDs"
+            + (f"; unknown IDs: {unknown}" if unknown else ".")
+        )
 
     result: list[EvidencePassage] = []
-    for pid in [str(x) for x in ordered_ids][: settings.retrieval_top_k]:
+    for pid in valid_ids[: settings.retrieval_top_k]:
         score, item = by_id[pid]
         result.append(
             EvidencePassage(
