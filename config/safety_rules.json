@@ -1,0 +1,32 @@
+{
+  "red_flags": [
+    {
+      "id": "oxygen_saturation_low",
+      "test_names": ["oxygen saturation", "spo2", "o2 sat"],
+      "operator": "<",
+      "threshold": 90,
+      "message": "low oxygen saturation"
+    },
+    {
+      "id": "systolic_bp_low",
+      "test_names": ["systolic blood pressure", "systolic bp", "sbp"],
+      "operator": "<",
+      "threshold": 90,
+      "message": "low systolic blood pressure"
+    },
+    {
+      "id": "lactate_high",
+      "test_names": ["lactate"],
+      "operator": ">=",
+      "threshold": 4,
+      "message": "markedly elevated lactate"
+    },
+    {
+      "id": "respiratory_rate_high",
+      "test_names": ["respiratory rate", "rr"],
+      "operator": ">=",
+      "threshold": 30,
+      "message": "marked tachypnea"
+    }
+  ]
+}
