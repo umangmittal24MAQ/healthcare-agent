@@ -18,9 +18,9 @@ _OPERATORS = {
 
 def _numeric_values(case: ClinicalCase) -> set[float]:
     values = {float(case.age)}
-    for lab in case.labs:
+    for measurement in [*case.vitals, *case.labs]:
         try:
-            values.add(float(lab.value))
+            values.add(float(measurement.value))
         except (TypeError, ValueError):
             pass
     return values
@@ -58,18 +58,21 @@ def _contains_treatment_order(texts: Iterable[str]) -> bool:
 def _red_flags(case: ClinicalCase) -> list[str]:
     rules = load_json_file(get_settings().safety_rules_path).get("red_flags", [])
     findings: list[str] = []
-    for lab in case.labs:
+    for measurement in [*case.vitals, *case.labs]:
         try:
-            value = float(lab.value)
+            value = float(measurement.value)
         except (TypeError, ValueError):
             continue
-        normalized_name = lab.test.strip().lower()
+        normalized_name = measurement.test.strip().lower()
         for rule in rules:
             names = {str(x).strip().lower() for x in rule.get("test_names", [])}
             compare = _OPERATORS.get(str(rule.get("operator")))
             threshold = rule.get("threshold")
             if normalized_name in names and compare and isinstance(threshold, (int, float)) and compare(value, float(threshold)):
-                findings.append(f"{rule.get('message', rule.get('id', 'configured red flag'))}: {lab.test}={lab.value}{(' ' + lab.unit) if lab.unit else ''}")
+                findings.append(
+                    f"{rule.get('message', rule.get('id', 'configured red flag'))}: "
+                    f"{measurement.test}={measurement.value}{(' ' + measurement.unit) if measurement.unit else ''}"
+                )
     return findings
 
 
