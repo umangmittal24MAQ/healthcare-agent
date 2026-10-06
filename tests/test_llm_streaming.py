@@ -21,7 +21,7 @@ class FakeResponse:
         chunks = [
             {"choices": [{"delta": {"reasoning_content": "checking"}}]},
             {"choices": [{"delta": {"content": '{"ok":'}}]},
-            {"choices": [{"delta": {"content": "true}"}}]},
+            {"choices": [{"delta": {"content": "true}"}, "finish_reason": "stop"]},
         ]
         for chunk in chunks:
             yield "data: " + json.dumps(chunk)
@@ -81,6 +81,15 @@ def test_llm_streaming_client_reassembles_json_and_requests_json_mode(monkeypatc
     assert "llm_connected" in event_types
     assert "llm_delta" in event_types
     assert event_types[-1] == "llm_complete"
+
+    delta_events = [event for event in events if event["type"] == "llm_delta"]
+    assert any(event["reasoning_chars"] > 0 for event in delta_events)
+    assert any(event["content_chars"] > 0 for event in delta_events)
+
+    complete = events[-1]
+    assert complete["content_chars"] > 0
+    assert complete["reasoning_chars"] > 0
+    assert complete["finish_reason"] == "stop"
 
 
 def test_extract_json_error_contains_response_preview():
