@@ -84,3 +84,21 @@ def test_intake_normalizes_common_clinical_enum_synonyms():
     assert normalized["labs"][0]["flag"] == "high"
     assert normalized["labs"][1]["flag"] == "low"
     assert normalized["labs"][2]["flag"] == "normal"
+
+
+def test_confidence_normalization_maps_moderate_to_medium():
+    from app.pipeline import _normalize_hypothesis_confidence
+
+    raw = {
+        "independent_hypotheses": [
+            {"name": "A", "rationale": "x", "confidence": "moderate"},
+            {"name": "B", "rationale": "y", "confidence": "intermediate"},
+            {"name": "C", "rationale": "z", "confidence": "high"},
+        ]
+    }
+
+    normalized = _normalize_hypothesis_confidence(raw, "independent_hypotheses")
+
+    assert normalized["independent_hypotheses"][0]["confidence"] == "medium"
+    assert normalized["independent_hypotheses"][1]["confidence"] == "medium"
+    assert normalized["independent_hypotheses"][2]["confidence"] == "high"
