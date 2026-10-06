@@ -412,7 +412,6 @@ def _intake(request: AnalyzeRequest) -> ClinicalCase:
                         "unit": "%",
                         "reference_range": None,
                         "flag": "unknown",
-                        "interpretation": None,
                         "observed_at": None,
                     }
                 ],
@@ -423,6 +422,7 @@ def _intake(request: AnalyzeRequest) -> ClinicalCase:
                         "unit": None,
                         "reference_range": None,
                         "flag": "unknown",
+                        "interpretation": None,
                         "observed_at": None,
                     }
                 ],
