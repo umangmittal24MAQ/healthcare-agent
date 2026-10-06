@@ -87,6 +87,22 @@ def _timeline_and_findings(case: ClinicalCase) -> tuple[list[TimelineEvent], lis
             detail += f"; onset={symptom.onset}"
         timeline.append(TimelineEvent(event_type="symptom", label=symptom.name, detail=detail))
 
+    for vital in case.vitals:
+        vital.flag = _derive_lab_flag(vital.value, vital.reference_range, vital.flag)
+        detail = f"{vital.value}{(' ' + vital.unit) if vital.unit else ''}; flag={vital.flag}"
+        timeline.append(
+            TimelineEvent(
+                event_type="vital",
+                label=vital.test,
+                detail=detail,
+                observed_at=vital.observed_at,
+            )
+        )
+        if vital.flag in {"low", "high", "critical"}:
+            finding = f"{vital.test}: {vital.value}{(' ' + vital.unit) if vital.unit else ''} ({vital.flag})"
+            abnormal.append(finding)
+            active.append(f"abnormal vital - {finding}")
+
     for lab in case.labs:
         lab.flag = _derive_lab_flag(lab.value, lab.reference_range, lab.flag)
         detail = f"{lab.value}{(' ' + lab.unit) if lab.unit else ''}; flag={lab.flag}"
@@ -130,9 +146,9 @@ def _record_numbers(case: ClinicalCase, source_note: str) -> set[str]:
     normalized_note = source_note.replace(",", "")
     for token in re.findall(r"(?<![A-Za-z])\d+(?:\.\d+)?", normalized_note):
         values.add(_canonical_number(token))
-    for lab in case.labs:
+    for measurement in [*case.vitals, *case.labs]:
         try:
-            values.add(_canonical_number(str(lab.value)))
+            values.add(_canonical_number(str(measurement.value)))
         except (TypeError, ValueError):
             continue
     return values
@@ -234,6 +250,39 @@ def _normalize_intake_output(raw: dict) -> dict:
         medications.append(medication)
     normalized["medications"] = medications
 
+    vitals = []
+    for item in normalized.get("vitals") or []:
+        vital = dict(item)
+        vital["flag"] = _normalize_enum(
+            vital.get("flag"),
+            {
+                "low": "low",
+                "decreased": "low",
+                "reduced": "low",
+                "below normal": "low",
+                "below range": "low",
+                "high": "high",
+                "elevated": "high",
+                "raised": "high",
+                "increased": "high",
+                "above normal": "high",
+                "above range": "high",
+                "normal": "normal",
+                "within normal limits": "normal",
+                "within normal range": "normal",
+                "wnl": "normal",
+                "critical": "critical",
+                "critically high": "critical",
+                "critically low": "critical",
+                "unknown": "unknown",
+                "unspecified": "unknown",
+                "not provided": "unknown",
+            },
+            "unknown",
+        )
+        vitals.append(vital)
+    normalized["vitals"] = vitals
+
     labs = []
     for item in normalized.get("labs") or []:
         lab = dict(item)
@@ -284,7 +333,10 @@ def _intake(request: AnalyzeRequest) -> ClinicalCase:
             "Do not infer diagnoses, treatments, normal values, or missing facts. Use empty arrays or nulls when absent. "
             "Use only these normalized enum values: sex=male|female|other|unknown; "
             "symptom severity=mild|moderate|severe|null; medication status=active|stopped|unknown; "
-            "lab flag=low|normal|high|critical|unknown. For example, map elevated/raised to high and decreased/reduced to low."
+            "vital/lab flag=low|normal|high|critical|unknown. For example, map elevated/raised to high and decreased/reduced to low. "
+            "Keep vital signs separate from laboratory tests. Put systolic blood pressure, diastolic blood pressure, heart rate, "
+            "respiratory rate, oxygen saturation/SpO2, and temperature under vitals when explicitly present. "
+            "Do not infer whether a numeric vital is normal or abnormal unless the note explicitly says so."
         ),
         user_payload=request.note,
         response_contract=json.dumps(
@@ -307,6 +359,16 @@ def _intake(request: AnalyzeRequest) -> ClinicalCase:
                         "dose": None,
                         "frequency": None,
                         "status": "unknown",
+                    }
+                ],
+                "vitals": [
+                    {
+                        "test": "oxygen saturation",
+                        "value": 87,
+                        "unit": "%",
+                        "reference_range": None,
+                        "flag": "unknown",
+                        "observed_at": None,
                     }
                 ],
                 "labs": [
@@ -375,11 +437,29 @@ def _differential(case: ClinicalCase, synthesis: Synthesis, evidence, *, revisio
         system_prompt=(
             "Generate a ranked differential diagnosis for clinician review only. Evidence was retrieved before reasoning. "
             "Every hypothesis must cite one or more supplied passage_id values that actually influenced the claim. "
-            "Include supporting evidence, opposing evidence, and missing information. Do not make a final diagnosis or prescribe treatment."
+            "Include supporting evidence, opposing evidence, and missing information. Do not make a final diagnosis or prescribe treatment. "
+            "Return at most 5 hypotheses. Keep each rationale to at most 2 short sentences, each evidence/missing list to at most 4 concise items, "
+            "and unresolved_questions to at most 5 items. confidence must be low, medium, or high."
         ),
         user_payload=prompt,
-        response_contract=_contract(Differential),
-        max_output_tokens=4096,
+        response_contract=json.dumps(
+            {
+                "hypotheses": [
+                    {
+                        "rank": 1,
+                        "name": "string",
+                        "rationale": "string",
+                        "supporting_evidence": ["string"],
+                        "opposing_evidence": ["string"],
+                        "missing_information": ["string"],
+                        "confidence": "medium",
+                        "citation_ids": ["passage_id"],
+                    }
+                ],
+                "unresolved_questions": ["string"],
+            }
+        ),
+        max_output_tokens=8192 if revision_context else 4096,
     )
     raw = _normalize_hypothesis_confidence(raw, "hypotheses")
     result = Differential.model_validate(raw)
@@ -399,7 +479,8 @@ def _challenge(case: ClinicalCase, synthesis: Synthesis, evidence) -> Challenge:
         system_prompt=(
             "Act as an independent clinical challenge agent. Build your own differential from the raw case, synthesis, and retrieved evidence. "
             "You are blind to the primary reasoner's answer. Surface contradictions, missing discriminating questions, and high-risk alternatives. "
-            "Do not diagnose or recommend treatment."
+            "Do not diagnose or recommend treatment. Return at most 5 independent hypotheses and keep rationales concise. "
+            "confidence must be low, medium, or high."
         ),
         user_payload={
             "case": case.model_dump(mode="json"),
@@ -454,7 +535,8 @@ def _next_steps(case: ClinicalCase, synthesis: Synthesis, differential: Differen
         system_prompt=(
             "Recommend only diagnostic information-gathering steps: questions, observations, or tests. "
             "For each step say which hypotheses it helps distinguish and why. Do not recommend treatment, medications, or dosing. "
-            "Citations must use only supplied passage_id values."
+            "Citations must use only supplied passage_id values. Return 3 to 5 concise suggestions. "
+            "kind must be question, observation, or test."
         ),
         user_payload={
             "case": case.model_dump(mode="json"),
@@ -462,8 +544,20 @@ def _next_steps(case: ClinicalCase, synthesis: Synthesis, differential: Differen
             "differential": differential.model_dump(mode="json"),
             "retrieved_evidence": [p.model_dump(mode="json") for p in evidence],
         },
-        response_contract='{"suggestions": [' + _contract(NextStep) + "]}",
-        max_output_tokens=3072,
+        response_contract=json.dumps(
+            {
+                "suggestions": [
+                    {
+                        "action": "string",
+                        "kind": "test",
+                        "distinguishes_between": ["hypothesis A", "hypothesis B"],
+                        "rationale": "string",
+                        "citation_ids": ["passage_id"],
+                    }
+                ]
+            }
+        ),
+        max_output_tokens=4096,
     )
     suggestions = [NextStep.model_validate(item) for item in raw.get("suggestions", [])]
     if not suggestions:
