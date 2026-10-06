@@ -155,3 +155,33 @@ The GitHub Actions workflow has two layers:
 - an opt-in live MAQ IndiaAI job using the repository secret `INDIAAI_API_KEY` (or `INDIAAI`) that probes Qwen and runs the full synthetic clinical pipeline.
 
 The live job is triggered by `workflow_dispatch` or a commit message containing `[live]`. Secrets are never printed; only stage/progress metadata is logged.
+
+
+## 20-case evaluation
+
+`.github/workflows/evaluation.yml` runs a live synthetic evaluation against the configured MAQ IndiaAI Qwen model.
+
+The dataset is stored in `data/eval_cases.json` and currently contains 20 cases across cardiopulmonary, respiratory, infectious, neurologic, metabolic, renal/electrolyte, endocrine, gastrointestinal, and abdominal presentations. Each case defines:
+
+- a must-consider diagnosis and accepted aliases;
+- a deliberate distractor/trap;
+- expected behavior for the configured deterministic red-flag rules;
+- one or more expected evidence-source domains.
+
+GitHub Actions runs the cases as a matrix with at most four live model runs in parallel. Every case writes a JSON artifact even when the pipeline fails. The aggregate job then reports:
+
+- pipeline completion rate;
+- must-consider diagnosis in the initial top 3;
+- must-consider diagnosis in the revised top 3;
+- configured red-flag accuracy;
+- whether the blind challenge surfaced a contradiction, missing question, or high-risk alternative;
+- citation integrity;
+- expected evidence-domain retrieval rate.
+
+The aggregate report is uploaded as `diagnostic-evaluation-report` containing `eval_report.md`, `eval_summary.json`, and the individual case results.
+
+Run it manually from **Actions → 20-Case Diagnostic Evaluation → Run workflow**, or trigger it with a main-branch commit containing `[eval]`.
+
+The workflow offers an optional `enforce_thresholds` input. Baseline runs can leave this disabled so the workflow reports observed quality without hiding failures; once the baseline is stable, enable it to make the aggregate job fail when defined quality thresholds are missed.
+
+This evaluation is an engineering benchmark on synthetic cases, not clinical validation or evidence of suitability for real-world diagnosis.
